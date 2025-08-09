@@ -7,4 +7,5 @@ export type PlayerState = {
   isJumping: boolean;
   isDucking: boolean;
   onGround: boolean;
+  facing: "left" | "right";
 };

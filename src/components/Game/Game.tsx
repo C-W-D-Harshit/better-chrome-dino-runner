@@ -44,6 +44,7 @@ function createInitialPlayer(): PlayerState {
     isJumping: false,
     isDucking: false,
     onGround: true,
+    facing: "right",
   };
 }
 
@@ -115,6 +116,13 @@ export function Game() {
 
       const player = playerRef.current;
       const obstacles = obstaclesRef.current;
+
+      // Handle input: Pause toggle via 'P'
+      if (input.pauseToken !== 0) {
+        // toggle once when token changes
+        setRunning((r) => !r);
+        // reset token by reducing it; we don't mutate input, so we rely on identity change each press
+      }
 
       // Handle input: Start/Retry and Jump
       if (!running && !gameOver && input.jumpPressed) {
@@ -205,6 +213,8 @@ export function Game() {
       } else if (input.rightHeld) {
         player.x += HORIZONTAL_MOVE_SPEED * dt;
       }
+      // Facing logic: only face left while left is held; otherwise face right
+      player.facing = input.leftHeld ? "left" : "right";
       if (player.x < 10) player.x = 10;
       const maxX = CANVAS_WIDTH - player.width - 10;
       if (player.x > maxX) player.x = maxX;
@@ -260,6 +270,9 @@ export function Game() {
       gameOver,
       input.duckHeld,
       input.jumpPressed,
+      input.pauseToken,
+      input.leftHeld,
+      input.rightHeld,
       resetGame,
       running,
       score,
@@ -291,7 +304,7 @@ export function Game() {
   const scale = targetWidth / CANVAS_WIDTH;
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center justify-center p-4 sm:p-6">
+    <div className="w-full min-h-screen flex flex-col items-center justify-center p-4 sm:p-6" data-theme={theme}>
       <div ref={containerRef} className="w-full max-w-[1100px]">
         {/* Title */}
         <div className="mb-3 flex items-center gap-2">
@@ -312,6 +325,7 @@ export function Game() {
             speed={speed}
             gameOver={gameOver}
             scale={Number.isFinite(scale) && scale > 0 ? scale : 1}
+            theme={theme}
           />
 
           {/* Minimal HUD overlay */}

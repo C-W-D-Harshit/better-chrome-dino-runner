@@ -5,6 +5,7 @@ export type InputState = {
   duckHeld: boolean; // down
   leftHeld: boolean; // ArrowLeft / A
   rightHeld: boolean; // ArrowRight / D
+  pauseToken: number; // increments on each 'P' press
 };
 
 export function useInput(): InputState {
@@ -12,14 +13,15 @@ export function useInput(): InputState {
   const [duckHeld, setDuckHeld] = useState(false);
   const [leftHeld, setLeftHeld] = useState(false);
   const [rightHeld, setRightHeld] = useState(false);
+  const [pauseToken, setPauseToken] = useState(0);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === "Space" || e.code === "ArrowUp") {
+      if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") {
         e.preventDefault();
         setJumpPressed(true);
       }
-      if (e.code === "ArrowDown") {
+      if (e.code === "ArrowDown" || e.code === "KeyS") {
         e.preventDefault();
         setDuckHeld(true);
       }
@@ -31,14 +33,18 @@ export function useInput(): InputState {
         e.preventDefault();
         setRightHeld(true);
       }
+      if (e.code === "KeyP") {
+        e.preventDefault();
+        setPauseToken((t) => t + 1);
+      }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === "Space" || e.code === "ArrowUp") {
+      if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") {
         e.preventDefault();
         setJumpPressed(false);
       }
-      if (e.code === "ArrowDown") {
+      if (e.code === "ArrowDown" || e.code === "KeyS") {
         e.preventDefault();
         setDuckHeld(false);
       }
@@ -61,5 +67,5 @@ export function useInput(): InputState {
     };
   }, []);
 
-  return { jumpPressed, duckHeld, leftHeld, rightHeld };
+  return { jumpPressed, duckHeld, leftHeld, rightHeld, pauseToken };
 }
