@@ -16,11 +16,14 @@ function createCactus(currentSpeed: number): Obstacle {
   };
 }
 
-function createBird(currentSpeed: number): Obstacle {
+function createBird(currentSpeed: number, score: number): Obstacle {
   const height = 24;
   const width = 34;
   const altitudeVariant = Math.random();
-  const y = altitudeVariant < 0.5 ? GROUND_Y - height - 60 : GROUND_Y - height - 110;
+  // Lower flight over time so ducking matters more
+  // As score increases, reduce altitude by up to ~35px
+  const lowerBy = Math.min(35, Math.floor(score / 300) * 7);
+  const y = (altitudeVariant < 0.5 ? GROUND_Y - height - 60 : GROUND_Y - height - 110) + lowerBy;
   return {
     id: Math.random().toString(36).slice(2),
     type: "bird",
@@ -45,11 +48,16 @@ export class ObstacleManager {
 
   update(deltaS: number, speed: number, score: number) {
     this.spawnTimerS += deltaS;
-    if (this.spawnTimerS >= this.nextSpawnS) {
+    // Dynamic spawn frequency scaling with score
+    const difficultyBoost = Math.min(0.6, Math.floor(score / 300) * 0.06);
+    if (this.spawnTimerS >= this.nextSpawnS * (1 - difficultyBoost)) {
       this.spawnTimerS = 0;
-      this.nextSpawnS = MIN_SPAWN_INTERVAL_S + Math.random() * (MAX_SPAWN_INTERVAL_S - MIN_SPAWN_INTERVAL_S);
+      // Decrease intervals gradually as score rises
+      const minInt = Math.max(0.55, MIN_SPAWN_INTERVAL_S - difficultyBoost * 0.5);
+      const maxInt = Math.max(0.85, MAX_SPAWN_INTERVAL_S - difficultyBoost * 0.6);
+      this.nextSpawnS = minInt + Math.random() * (maxInt - minInt);
       const canSpawnBird = score >= 400 && Math.random() < 0.3;
-      const o = canSpawnBird ? createBird(speed) : createCactus(speed);
+      const o = canSpawnBird ? createBird(speed, score) : createCactus(speed);
       this.obstacles.push(o);
     }
 
