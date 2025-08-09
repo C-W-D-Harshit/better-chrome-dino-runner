@@ -341,6 +341,14 @@ export function Game() {
             onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
           />
 
+          {/* Controls hint (non-blocking) */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center">
+            <div className="pointer-events-auto rounded-md border border-border bg-popover/70 px-2.5 py-1 text-[10px] text-muted-foreground backdrop-blur">
+              <span className="hidden sm:inline">W/Up: Jump · S/Down: Duck/Fall · A/Left & D/Right: Move · </span>
+              <span>Space: Start/Retry · P: Pause</span>
+            </div>
+          </div>
+
           {!running && !gameOver && (
             <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-2">
               <div className="pointer-events-auto rounded-md border border-border bg-popover/70 backdrop-blur px-3 py-2">
