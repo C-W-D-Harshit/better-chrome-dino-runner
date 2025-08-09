@@ -158,7 +158,8 @@ export function GameCanvas({ width, height, groundY, player, obstacles, coins = 
 
     // Cactus drawing
     const drawCactus = (ox: number, oy: number, ow: number, oh: number) => {
-      drawShadow(ox + ow * 0.5, groundY + 3, Math.max(10, ow * 0.4), 4);
+      // The cactus geometry spans roughly 0%..80% of its bounding width; center near 40%
+      drawShadow(ox + ow * 0.4, groundY + 3, Math.max(10, ow * 0.4), 4);
       ctx.save();
       ctx.fillStyle = fg;
 
