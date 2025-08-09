@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import GameCanvas from "./GameCanvas";
 import GameUI from "./GameUI";
 import GameHUD from "./GameHUD";
@@ -124,14 +124,7 @@ export function Game() {
         // reset token by reducing it; we don't mutate input, so we rely on identity change each press
       }
 
-      // Handle input: Start/Retry and Jump
-      if (!running && !gameOver && input.jumpPressed) {
-        setRunning(true);
-      }
-      if (gameOver && input.jumpPressed) {
-        resetGame();
-        setRunning(true);
-      }
+      // Start/Retry mapping is handled by a dedicated key listener effect when not running or ended
 
       // Track jump press for jump-cut & buffer
       if (input.jumpPressed && !jumpHeldRef.current) {
@@ -282,6 +275,24 @@ export function Game() {
   );
 
   useGameLoop(running, onFrame);
+
+  // Map Space to Start/Restart only when game is not running or is ended; remove mapping when running
+  useEffect(() => {
+    if (running && !gameOver) return; // active only when idle or ended
+    const handler = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        if (!running && !gameOver) {
+          setRunning(true);
+        } else if (gameOver) {
+          resetGame();
+          setRunning(true);
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [running, gameOver, resetGame]);
 
   // Derived values for canvas render
   const playerForRender = useMemo(
