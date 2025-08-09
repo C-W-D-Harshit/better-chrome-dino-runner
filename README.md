@@ -2,6 +2,8 @@
 
 An enhanced, minimalist, theme-aware Dino Runner built with React + TypeScript + Vite and TailwindCSS (shadcn tokens).
 
+![Game preview](public/image.png)
+
 ## Features
 
 - Smooth 60fps game loop with physics (coyote time, jump buffer, jump-cut, fast-fall)
