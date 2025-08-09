@@ -11,6 +11,9 @@ export type GameUIProps = {
   highScore: number;
   onStart: () => void;
   onRestart: () => void;
+  score?: number;
+  topSpeed?: number;
+  coinsCollected?: number;
 };
 
 export function GameUI({
@@ -19,6 +22,9 @@ export function GameUI({
   highScore,
   onStart,
   onRestart,
+  score = 0,
+  topSpeed = 0,
+  coinsCollected = 0,
 }: GameUIProps) {
   if (!running && !gameOver) {
     return (
@@ -39,7 +45,7 @@ export function GameUI({
       <div className="mt-6 flex flex-col items-center gap-3">
         <div className="text-sm font-medium text-foreground">Game Over</div>
         <div className="text-xs text-muted-foreground">
-          High score: {Math.floor(highScore)}
+          Score: {Math.floor(score)} · High: {Math.floor(highScore)} · Top speed: {Math.round(topSpeed)} · Coins: {coinsCollected}
         </div>
         <Button
           onClick={onRestart}

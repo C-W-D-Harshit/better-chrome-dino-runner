@@ -173,7 +173,6 @@ export function GameCanvas({
     const dashHeight = 2;
     // Scroll ground details using the accumulated world offset
     const worldOffset = nextOffset;
-    const scroll = ((worldOffset % spacing) + spacing) % spacing;
 
     // Deterministic pseudo-random for layout stability frame-to-frame
     const rand01 = (n: number) => {

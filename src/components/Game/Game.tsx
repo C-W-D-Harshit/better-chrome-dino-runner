@@ -71,6 +71,8 @@ export function Game() {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(getStoredHighScore);
   const [speed, setSpeed] = useState(INITIAL_SPEED);
+  const [coinsCollected, setCoinsCollected] = useState(0);
+  const [topSpeed, setTopSpeed] = useState(INITIAL_SPEED);
 
   const playerRef = useRef<PlayerState>(createInitialPlayer());
   const obstaclesRef = useRef<Obstacle[]>([]);
@@ -94,6 +96,8 @@ export function Game() {
     coinManagerRef.current.reset();
     setScore(0);
     setSpeed(INITIAL_SPEED);
+    setTopSpeed(INITIAL_SPEED);
+    setCoinsCollected(0);
     setGameOver(false);
   }, []);
 
@@ -115,6 +119,7 @@ export function Game() {
       // Increase speed and score
       setSpeed((s) => s + SPEED_INCREASE_PER_SECOND * dt);
       setScore((sc) => sc + (speed * dt) / 10);
+      setTopSpeed((ts) => (speed > ts ? speed : ts));
 
       const player = playerRef.current;
       const obstacles = obstaclesRef.current;
@@ -253,7 +258,10 @@ export function Game() {
         );
         if (intersects) {
           audio.playCoin();
-          setScore((s) => s + 10);
+          // Score effect: coin value
+          setScore((s) => s + 100);
+          setCoinsCollected((n) => n + 1);
+          coinManagerRef.current.markCollected();
           coinManagerRef.current.remove(c.id);
         }
       }
@@ -387,6 +395,9 @@ export function Game() {
           running={running}
           gameOver={gameOver}
           highScore={highScore}
+          score={score}
+          topSpeed={topSpeed}
+          coinsCollected={coinsCollected}
           onStart={() => setRunning(true)}
           onRestart={() => {
             resetGame();
