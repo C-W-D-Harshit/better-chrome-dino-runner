@@ -83,6 +83,8 @@ export function Game() {
   const coyoteTimerRef = useRef(0);
   const jumpBufferTimerRef = useRef(0);
   const jumpHeldRef = useRef(false);
+  // Pause edge detection
+  const lastPauseTokenRef = useRef(0);
 
   const resetGame = useCallback(() => {
     playerRef.current = createInitialPlayer();
@@ -117,11 +119,10 @@ export function Game() {
       const player = playerRef.current;
       const obstacles = obstaclesRef.current;
 
-      // Handle input: Pause toggle via 'P'
-      if (input.pauseToken !== 0) {
-        // toggle once when token changes
+      // Pause toggle via 'P' key: only act on edges
+      if (input.pauseToken !== lastPauseTokenRef.current) {
+        lastPauseTokenRef.current = input.pauseToken;
         setRunning((r) => !r);
-        // reset token by reducing it; we don't mutate input, so we rely on identity change each press
       }
 
       // Start/Retry mapping is handled by a dedicated key listener effect when not running or ended
@@ -337,6 +338,7 @@ export function Game() {
             gameOver={gameOver}
             scale={Number.isFinite(scale) && scale > 0 ? scale : 1}
             theme={theme}
+            running={running}
           />
 
           {/* Minimal HUD overlay */}

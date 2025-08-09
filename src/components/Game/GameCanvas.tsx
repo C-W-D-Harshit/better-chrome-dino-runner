@@ -15,6 +15,7 @@ export type GameCanvasProps = {
   gameOver: boolean;
   scale: number; // device-independent scale for responsive rendering
   theme: "light" | "dark" | "system"; // used to re-render on theme change
+  running?: boolean; // whether the game loop is running (for scrolling)
 };
 
 export function GameCanvas({
@@ -29,6 +30,7 @@ export function GameCanvas({
   gameOver,
   scale,
   theme,
+  running = true,
 }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   // Preloaded SVG image for cactus rendering on canvas
@@ -77,6 +79,20 @@ export function GameCanvas({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // Keep a simple time accumulator to drive ground scrolling at world speed
+    const lastTimeKey = "__last_time" as const;
+    const groundOffsetKey = "__ground_offset" as const;
+    const anyCtx = ctx as unknown as Record<string, number>;
+    const now = performance.now();
+    const last = typeof anyCtx[lastTimeKey] === "number" ? (anyCtx[lastTimeKey] as number) : now;
+    let dt = (now - last) / 1000;
+    if (!Number.isFinite(dt) || dt < 0) dt = 0;
+    dt = Math.min(0.05, dt);
+    anyCtx[lastTimeKey] = now;
+    const prevOffset = typeof anyCtx[groundOffsetKey] === "number" ? (anyCtx[groundOffsetKey] as number) : 0;
+    const nextOffset = prevOffset + (running ? speed * dt : 0);
+    anyCtx[groundOffsetKey] = nextOffset;
+
     // Configure canvas display size and internal scaling
     const displayWidth = Math.round(width * scale);
     const displayHeight = Math.round(height * scale);
@@ -119,19 +135,18 @@ export function GameCanvas({
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, width, height);
 
-    // Subtle parallax lines (background strips)
+    // Subtle parallax lines (background strips). Scroll at world speed with mild parallax
     ctx.save();
     ctx.globalAlpha = 0.6;
     ctx.fillStyle = muted;
-    const t = performance.now() * 0.0004;
+    const bgSpacing = 220;
+    const bgScroll = nextOffset % (width + bgSpacing);
     for (let i = 0; i < 4; i++) {
       const y = groundY - 110 - i * 22;
       const speedMult = 0.4 + i * 0.2;
       for (let j = 0; j < 6; j++) {
-        const x =
-          ((j * 180 - ((t * speed * speedMult) % (width + 240)) + width + 240) %
-            (width + 240)) -
-          120;
+        const sx = (j * 180 - bgScroll * speedMult) % (width + bgSpacing);
+        const x = ((sx + width + bgSpacing) % (width + bgSpacing)) - 120;
         ctx.fillRect(x, y, 60 + i * 10, 3);
       }
     }
@@ -144,6 +159,76 @@ export function GameCanvas({
     ctx.moveTo(0, groundY + 0.5);
     ctx.lineTo(width, groundY + 0.5);
     ctx.stroke();
+
+    // Ground band (subtle tint below the line for depth)
+    ctx.save();
+    ctx.globalAlpha = 0.06;
+    ctx.fillStyle = fg;
+    ctx.fillRect(0, groundY + 1, width, Math.max(0, height - groundY - 1));
+    ctx.restore();
+
+    // Moving ground details: ties/dashes, pebbles, and sparse grass tufts
+    const spacing = 44; // px between ground details
+    const dashWidth = 14;
+    const dashHeight = 2;
+    // Scroll ground details using the accumulated world offset
+    const worldOffset = nextOffset;
+    const scroll = ((worldOffset % spacing) + spacing) % spacing;
+
+    // Deterministic pseudo-random for layout stability frame-to-frame
+    const rand01 = (n: number) => {
+      const s = Math.sin(n * 9283.133) * 43758.5453;
+      return s - Math.floor(s);
+    };
+
+    const segments = Math.ceil((width + spacing) / spacing) + 2;
+    // Anchor segment indices to world space to avoid drifting with viewport
+    const firstIndex = Math.floor((worldOffset - spacing) / spacing);
+    for (let seg = 0; seg < segments; seg++) {
+      const i = firstIndex + seg;
+      const baseX = (i * spacing - worldOffset) + spacing;
+      // Dash/tie slightly above ground
+      ctx.save();
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = fg;
+      ctx.fillRect(Math.round(baseX), groundY + 3, dashWidth, dashHeight);
+      ctx.restore();
+
+      // Pebbles (1-2 per segment), positioned with deterministic jitter
+      const r = rand01(i + 123.45);
+      const pebbleCount = r > 0.65 ? 2 : r > 0.35 ? 1 : 0;
+      for (let p = 0; p < pebbleCount; p++) {
+        const rp = rand01(i * 3.17 + p * 9.77);
+        const pxPeb = Math.round(baseX + 6 + rp * (spacing - 12));
+        const size = 1 + Math.floor(rand01(i * 5.31 + p * 2.21) * 3);
+        const pyPeb = groundY + 5 + Math.floor(rand01(i * 7.99 + p * 1.17) * 10);
+        ctx.save();
+        ctx.globalAlpha = 0.22;
+        ctx.fillStyle = fg;
+        ctx.fillRect(pxPeb, pyPeb, size + 1, 1 + (size > 2 ? 1 : 0));
+        ctx.restore();
+      }
+
+      // Occasional tufts (minimal vertical strokes just above ground)
+      if (rand01(i * 11.13) > 0.88) {
+        const tx = baseX + 10 + rand01(i * 12.77) * 20;
+        ctx.save();
+        ctx.globalAlpha = 0.15;
+        ctx.strokeStyle = fg;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(tx, groundY - 4);
+        ctx.lineTo(tx, groundY - 1);
+        ctx.stroke();
+        if (rand01(i * 15.31) > 0.6) {
+          ctx.beginPath();
+          ctx.moveTo(tx + 3, groundY - 3);
+          ctx.lineTo(tx + 3, groundY - 1);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
 
     // Helper: shadow ellipse
     const drawShadow = (cx: number, cy: number, w: number, h: number) => {
@@ -453,6 +538,7 @@ export function GameCanvas({
     gameOver,
     scale,
     theme,
+    running,
   ]);
 
   return (
