@@ -4,6 +4,7 @@ import GameUI from "./GameUI";
 import { useGameLoop } from "@/hooks/useGameLoop";
 import { usePageVisibility } from "@/hooks/useVisibility";
 import { useInput } from "@/hooks/useInput";
+import { useElementSize } from "@/hooks/useElementSize";
 import { aabbIntersects } from "@/utils/collision";
 import {
   BIRD_UNLOCK_SCORE,
@@ -197,24 +198,29 @@ export function Game() {
   const playerForRender = useMemo(() => ({ ...playerRef.current }), [score, speed, running, gameOver]);
   const obstaclesForRender = useMemo(() => [...obstaclesRef.current], [score, speed, running, gameOver]);
 
+  // Responsive sizing
+  const { ref: containerRef, width: containerWidth } = useElementSize<HTMLDivElement>();
+  const targetWidth = Math.min(Math.max(320, containerWidth - 32), 1000);
+  const scale = targetWidth / CANVAS_WIDTH;
+
   return (
-    <div className="w-full min-h-screen flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-[900px]">
-        <div className="mb-4 flex items-center justify-between">
+    <div className="w-full min-h-screen flex flex-col items-center justify-center p-4 sm:p-6">
+      <div ref={containerRef} className="w-full max-w-[1100px]">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-primary" />
-            <h1 className="text-lg font-semibold text-foreground">Better Chrome Dino Runner</h1>
+            <h1 className="text-base sm:text-lg font-semibold text-foreground">Better Chrome Dino Runner</h1>
           </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <div className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+            <div className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1.5 sm:px-3">
               <span className="text-foreground/70">Speed</span>
               <span className="font-medium text-foreground tabular-nums">{Math.round(speed)}</span>
             </div>
-            <div className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5">
+            <div className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1.5 sm:px-3">
               <span className="text-foreground/70">Score</span>
               <span className="font-medium text-foreground tabular-nums">{Math.floor(score).toString().padStart(5, "0")}</span>
             </div>
-            <div className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5">
+            <div className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1.5 sm:px-3">
               <span className="text-foreground/70">High</span>
               <span className="font-medium text-foreground tabular-nums">{Math.floor(highScore).toString().padStart(5, "0")}</span>
             </div>
@@ -231,20 +237,21 @@ export function Game() {
             score={score}
             speed={speed}
             gameOver={gameOver}
+            scale={Number.isFinite(scale) && scale > 0 ? scale : 1}
           />
 
           {!running && !gameOver && (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="pointer-events-auto rounded-md border border-border bg-popover/70 backdrop-blur px-4 py-3">
-                <div className="text-sm text-muted-foreground">Press Space to start</div>
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-2">
+              <div className="pointer-events-auto rounded-md border border-border bg-popover/70 backdrop-blur px-3 py-2">
+                <div className="text-xs sm:text-sm text-muted-foreground">Press Space to start</div>
               </div>
             </div>
           )}
 
           {gameOver && (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="pointer-events-auto rounded-md border border-border bg-popover/70 backdrop-blur px-4 py-3">
-                <div className="text-sm text-muted-foreground">Crashed! Press Space to retry</div>
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-2">
+              <div className="pointer-events-auto rounded-md border border-border bg-popover/70 backdrop-blur px-3 py-2">
+                <div className="text-xs sm:text-sm text-muted-foreground">Crashed! Press Space to retry</div>
               </div>
             </div>
           )}

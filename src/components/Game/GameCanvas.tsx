@@ -3,17 +3,18 @@ import type { Obstacle } from "@/types/obstacles";
 import type { PlayerState } from "@/types/player";
 
 export type GameCanvasProps = {
-  width: number;
-  height: number;
+  width: number; // logical width for game world
+  height: number; // logical height for game world
   groundY: number;
   player: PlayerState;
   obstacles: Obstacle[];
   score: number;
   speed: number;
   gameOver: boolean;
+  scale: number; // device-independent scale for responsive rendering
 };
 
-export function GameCanvas({ width, height, groundY, player, obstacles, score, speed, gameOver }: GameCanvasProps) {
+export function GameCanvas({ width, height, groundY, player, obstacles, score, speed, gameOver, scale }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -21,6 +22,15 @@ export function GameCanvas({ width, height, groundY, player, obstacles, score, s
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    // Configure canvas display size and internal scaling
+    const displayWidth = Math.round(width * scale);
+    const displayHeight = Math.round(height * scale);
+    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+      canvas.width = displayWidth;
+      canvas.height = displayHeight;
+    }
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
 
     // Clear & background using CSS variables via computed styles
     ctx.clearRect(0, 0, width, height);
@@ -60,16 +70,11 @@ export function GameCanvas({ width, height, groundY, player, obstacles, score, s
     }
 
     // HUD is rendered in DOM overlay for crisp UI
-  }, [width, height, groundY, player, obstacles, score, speed, gameOver]);
+  }, [width, height, groundY, player, obstacles, score, speed, gameOver, scale]);
 
   return (
     <div className="w-full flex items-center justify-center">
-      <canvas
-        ref={canvasRef}
-        width={width}
-        height={height}
-        className="rounded-lg border border-border bg-card"
-      />
+      <canvas ref={canvasRef} className="h-auto w-full rounded-lg border border-border bg-card" />
     </div>
   );
 }
