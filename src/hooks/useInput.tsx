@@ -12,18 +12,22 @@ export function useInput(): InputState {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space" || e.code === "ArrowUp") {
+        e.preventDefault();
         setJumpPressed(true);
       }
       if (e.code === "ArrowDown") {
+        e.preventDefault();
         setDuckHeld(true);
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === "Space" || e.code === "ArrowUp") {
+        e.preventDefault();
         setJumpPressed(false);
       }
       if (e.code === "ArrowDown") {
+        e.preventDefault();
         setDuckHeld(false);
       }
     };

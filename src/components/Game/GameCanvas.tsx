@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Obstacle } from "@/types/obstacles";
 import type { PlayerState } from "@/types/player";
+import type { Coin } from "@/types/collectibles";
 
 export type GameCanvasProps = {
   width: number; // logical width for game world
@@ -8,13 +9,14 @@ export type GameCanvasProps = {
   groundY: number;
   player: PlayerState;
   obstacles: Obstacle[];
+  coins?: Coin[];
   score: number;
   speed: number;
   gameOver: boolean;
   scale: number; // device-independent scale for responsive rendering
 };
 
-export function GameCanvas({ width, height, groundY, player, obstacles, score, speed, gameOver, scale }: GameCanvasProps) {
+export function GameCanvas({ width, height, groundY, player, obstacles, coins = [], score, speed, gameOver, scale }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -39,6 +41,7 @@ export function GameCanvas({ width, height, groundY, player, obstacles, score, s
     const fg = styles.getPropertyValue("--color-foreground").trim() || "#111827";
     const muted = styles.getPropertyValue("--color-muted").trim() || "#e5e7eb";
     const destructive = styles.getPropertyValue("--color-destructive").trim() || "#ef4444";
+    const accent = styles.getPropertyValue("--color-accent").trim() || "#eab308";
 
     // Background
     ctx.fillStyle = bg;
@@ -69,8 +72,16 @@ export function GameCanvas({ width, height, groundY, player, obstacles, score, s
       ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
     }
 
+    // Coins
+    ctx.fillStyle = accent;
+    for (const coin of coins) {
+      ctx.beginPath();
+      ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
     // HUD is rendered in DOM overlay for crisp UI
-  }, [width, height, groundY, player, obstacles, score, speed, gameOver, scale]);
+  }, [width, height, groundY, player, obstacles, coins, score, speed, gameOver, scale]);
 
   return (
     <div className="w-full flex items-center justify-center">

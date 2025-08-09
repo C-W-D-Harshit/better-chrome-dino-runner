@@ -5,9 +5,10 @@ import { useGameLoop } from "@/hooks/useGameLoop";
 import { usePageVisibility } from "@/hooks/useVisibility";
 import { useInput } from "@/hooks/useInput";
 import { useElementSize } from "@/hooks/useElementSize";
+import { useAudio } from "@/hooks/useAudio";
+import { useTheme } from "@/hooks/useTheme";
 import { aabbIntersects } from "@/utils/collision";
 import {
-  BIRD_UNLOCK_SCORE,
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
   DUCK_HEIGHT,
@@ -15,14 +16,15 @@ import {
   GRAVITY,
   INITIAL_SPEED,
   JUMP_VELOCITY,
-  MAX_SPAWN_INTERVAL_S,
-  MIN_SPAWN_INTERVAL_S,
   PLAYER_HEIGHT,
   PLAYER_WIDTH,
   SPEED_INCREASE_PER_SECOND,
 } from "@/utils/gameConstants";
 import type { Obstacle } from "@/types/obstacles";
 import type { PlayerState } from "@/types/player";
+import type { Coin } from "@/types/collectibles";
+import { ObstacleManager } from "@/components/Obstacles/ObstacleManager";
+import { CoinManager } from "@/components/Collectibles/CoinManager";
 
 function createInitialPlayer(): PlayerState {
   return {
@@ -37,36 +39,7 @@ function createInitialPlayer(): PlayerState {
   };
 }
 
-function createCactus(speed: number): Obstacle {
-  const sizeVariant = Math.random();
-  const w = sizeVariant < 0.5 ? 20 : sizeVariant < 0.85 ? 30 : 45;
-  const h = w * 1.6;
-  return {
-    id: Math.random().toString(36).slice(2),
-    type: "cactus",
-    x: CANVAS_WIDTH + 20,
-    y: GROUND_Y - h,
-    width: w,
-    height: h,
-    speed,
-  };
-}
-
-function createBird(speed: number): Obstacle {
-  const h = 24;
-  const w = 34;
-  const altitudeVariant = Math.random();
-  const y = altitudeVariant < 0.5 ? GROUND_Y - h - 60 : GROUND_Y - h - 110;
-  return {
-    id: Math.random().toString(36).slice(2),
-    type: "bird",
-    x: CANVAS_WIDTH + 20,
-    y,
-    width: w,
-    height: h,
-    speed: speed + 40,
-  };
-}
+// obstacle and coin creation are handled by managers
 
 function getStoredHighScore(): number {
   const raw = localStorage.getItem("bcd_highScore");
@@ -81,6 +54,8 @@ function setStoredHighScore(score: number): void {
 export function Game() {
   const visible = usePageVisibility();
   const input = useInput();
+  const audio = useAudio();
+  const { isDark, toggleTheme } = useTheme();
 
   const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -90,16 +65,17 @@ export function Game() {
 
   const playerRef = useRef<PlayerState>(createInitialPlayer());
   const obstaclesRef = useRef<Obstacle[]>([]);
-  const spawnTimerRef = useRef(0);
-  const nextSpawnIntervalRef = useRef(
-    MIN_SPAWN_INTERVAL_S + Math.random() * (MAX_SPAWN_INTERVAL_S - MIN_SPAWN_INTERVAL_S)
-  );
+  const coinsRef = useRef<Coin[]>([]);
+  const obstacleManagerRef = useRef(new ObstacleManager());
+  const coinManagerRef = useRef(new CoinManager());
+  // timers handled by managers
 
   const resetGame = useCallback(() => {
     playerRef.current = createInitialPlayer();
     obstaclesRef.current = [];
-    spawnTimerRef.current = 0;
-    nextSpawnIntervalRef.current = MIN_SPAWN_INTERVAL_S + Math.random() * (MAX_SPAWN_INTERVAL_S - MIN_SPAWN_INTERVAL_S);
+    coinsRef.current = [];
+    obstacleManagerRef.current.reset();
+    coinManagerRef.current.reset();
     setScore(0);
     setSpeed(INITIAL_SPEED);
     setGameOver(false);
@@ -127,11 +103,20 @@ export function Game() {
       const player = playerRef.current;
       const obstacles = obstaclesRef.current;
 
-      // Handle input: Jump
+      // Handle input: Start/Retry and Jump
+      if (!running && !gameOver && input.jumpPressed) {
+        setRunning(true);
+      }
+      if (gameOver && input.jumpPressed) {
+        resetGame();
+        setRunning(true);
+      }
+
       if (input.jumpPressed && player.onGround && !player.isJumping) {
         player.velocityY = -JUMP_VELOCITY;
         player.onGround = false;
         player.isJumping = true;
+        audio.playJump();
       }
 
       // Ducking
@@ -159,37 +144,34 @@ export function Game() {
         }
       }
 
-      // Spawn obstacles
-      spawnTimerRef.current += dt;
-      const currentSpawnInterval = nextSpawnIntervalRef.current;
-      if (spawnTimerRef.current >= currentSpawnInterval) {
-        spawnTimerRef.current = 0;
-        nextSpawnIntervalRef.current = MIN_SPAWN_INTERVAL_S + Math.random() * (MAX_SPAWN_INTERVAL_S - MIN_SPAWN_INTERVAL_S);
-        const canSpawnBird = score >= BIRD_UNLOCK_SCORE && Math.random() < 0.3;
-        const newObstacle = canSpawnBird ? createBird(speed) : createCactus(speed);
-        obstacles.push(newObstacle);
-      }
-
-      // Move obstacles and recycle
-      for (let i = obstacles.length - 1; i >= 0; i--) {
-        const o = obstacles[i];
-        o.x -= speed * dt;
-        if (o.x + o.width < -50) {
-          obstacles.splice(i, 1);
-        }
-      }
+      // Update managers
+      obstacleManagerRef.current.update(dt, speed, score);
+      obstaclesRef.current = obstacleManagerRef.current.get();
+      coinManagerRef.current.update(dt, speed);
+      coinsRef.current = coinManagerRef.current.get();
 
       // Collisions
       for (const o of obstacles) {
         if (
           aabbIntersects(player.x + 6, player.y + 4, player.width - 12, player.height - 8, o.x + 4, o.y + 2, o.width - 8, o.height - 4)
         ) {
+          audio.playCrash();
           endGame();
           break;
         }
       }
+
+      // Coin collection
+      for (const c of coinsRef.current) {
+        const intersects = aabbIntersects(player.x, player.y, player.width, player.height, c.x - c.radius, c.y - c.radius, c.radius * 2, c.radius * 2);
+        if (intersects) {
+          audio.playCoin();
+          setScore((s) => s + 10);
+          coinManagerRef.current.remove(c.id);
+        }
+      }
     },
-    [endGame, input.duckHeld, input.jumpPressed, score, speed, visible]
+    [audio, endGame, gameOver, input.duckHeld, input.jumpPressed, resetGame, running, score, speed, visible]
   );
 
   useGameLoop(running, onFrame);
@@ -197,6 +179,7 @@ export function Game() {
   // Derived values for canvas render
   const playerForRender = useMemo(() => ({ ...playerRef.current }), [score, speed, running, gameOver]);
   const obstaclesForRender = useMemo(() => [...obstaclesRef.current], [score, speed, running, gameOver]);
+  const coinsForRender = useMemo(() => [...coinsRef.current], [score, speed, running, gameOver]);
 
   // Responsive sizing
   const { ref: containerRef, width: containerWidth } = useElementSize<HTMLDivElement>();
@@ -224,6 +207,30 @@ export function Game() {
               <span className="text-foreground/70">High</span>
               <span className="font-medium text-foreground tabular-nums">{Math.floor(highScore).toString().padStart(5, "0")}</span>
             </div>
+            <button
+              type="button"
+              className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-card px-3 text-foreground/80 hover:bg-card/80"
+              onClick={() => (running ? setRunning(false) : setRunning(true))}
+              aria-label={running ? "Pause" : "Play"}
+            >
+              {running ? "Pause" : "Play"}
+            </button>
+            <button
+              type="button"
+              className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-card px-3 text-foreground/80 hover:bg-card/80"
+              onClick={() => audio.setEnabled(!audio.enabled)}
+              aria-label={audio.enabled ? "Mute" : "Unmute"}
+            >
+              {audio.enabled ? "Mute" : "Unmute"}
+            </button>
+            <button
+              type="button"
+              className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-card px-3 text-foreground/80 hover:bg-card/80"
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+            >
+              {isDark ? "Light" : "Dark"}
+            </button>
           </div>
         </div>
 
@@ -234,6 +241,7 @@ export function Game() {
             groundY={GROUND_Y}
             player={playerForRender}
             obstacles={obstaclesForRender}
+            coins={coinsForRender}
             score={score}
             speed={speed}
             gameOver={gameOver}
