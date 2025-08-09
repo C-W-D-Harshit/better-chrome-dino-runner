@@ -59,17 +59,17 @@ export function GameCanvas({ width, height, groundY, player, obstacles, score, s
       ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
     }
 
-    // HUD
-    ctx.fillStyle = fg;
-    ctx.font = "16px ui-sans-serif, system-ui";
-    ctx.textAlign = "right";
-    ctx.fillText(`SPEED ${Math.round(speed)}`, width - 12, 22);
-    ctx.fillText(`${Math.floor(score).toString().padStart(5, "0")}`, width - 12, 42);
+    // HUD is rendered in DOM overlay for crisp UI
   }, [width, height, groundY, player, obstacles, score, speed, gameOver]);
 
   return (
     <div className="w-full flex items-center justify-center">
-      <canvas ref={canvasRef} width={width} height={height} className="rounded-md shadow-sm bg-card" />
+      <canvas
+        ref={canvasRef}
+        width={width}
+        height={height}
+        className="rounded-lg border border-border bg-card"
+      />
     </div>
   );
 }

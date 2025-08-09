@@ -199,27 +199,68 @@ export function Game() {
 
   return (
     <div className="w-full min-h-screen flex flex-col items-center justify-center p-6">
-      <h1 className="text-2xl font-semibold mb-4">Better Chrome Dino Runner</h1>
-      <GameCanvas
-        width={CANVAS_WIDTH}
-        height={CANVAS_HEIGHT}
-        groundY={GROUND_Y}
-        player={playerForRender}
-        obstacles={obstaclesForRender}
-        score={score}
-        speed={speed}
-        gameOver={gameOver}
-      />
-      <GameUI
-        running={running}
-        gameOver={gameOver}
-        highScore={highScore}
-        onStart={() => setRunning(true)}
-        onRestart={() => {
-          resetGame();
-          setRunning(true);
-        }}
-      />
+      <div className="w-full max-w-[900px]">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-primary" />
+            <h1 className="text-lg font-semibold text-foreground">Better Chrome Dino Runner</h1>
+          </div>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5">
+              <span className="text-foreground/70">Speed</span>
+              <span className="font-medium text-foreground tabular-nums">{Math.round(speed)}</span>
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5">
+              <span className="text-foreground/70">Score</span>
+              <span className="font-medium text-foreground tabular-nums">{Math.floor(score).toString().padStart(5, "0")}</span>
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5">
+              <span className="text-foreground/70">High</span>
+              <span className="font-medium text-foreground tabular-nums">{Math.floor(highScore).toString().padStart(5, "0")}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative">
+          <GameCanvas
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
+            groundY={GROUND_Y}
+            player={playerForRender}
+            obstacles={obstaclesForRender}
+            score={score}
+            speed={speed}
+            gameOver={gameOver}
+          />
+
+          {!running && !gameOver && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="pointer-events-auto rounded-md border border-border bg-popover/70 backdrop-blur px-4 py-3">
+                <div className="text-sm text-muted-foreground">Press Space to start</div>
+              </div>
+            </div>
+          )}
+
+          {gameOver && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="pointer-events-auto rounded-md border border-border bg-popover/70 backdrop-blur px-4 py-3">
+                <div className="text-sm text-muted-foreground">Crashed! Press Space to retry</div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <GameUI
+          running={running}
+          gameOver={gameOver}
+          highScore={highScore}
+          onStart={() => setRunning(true)}
+          onRestart={() => {
+            resetGame();
+            setRunning(true);
+          }}
+        />
+      </div>
     </div>
   );
 }
