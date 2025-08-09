@@ -7,7 +7,7 @@ import { usePageVisibility } from "@/hooks/useVisibility";
 import { useInput } from "@/hooks/useInput";
 import { useElementSize } from "@/hooks/useElementSize";
 import { useAudio } from "@/hooks/useAudio";
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme } from "@/components/ThemeProvider";
 import { aabbIntersects } from "@/utils/collision";
 import {
   CANVAS_HEIGHT,
@@ -17,6 +17,13 @@ import {
   GRAVITY,
   INITIAL_SPEED,
   JUMP_VELOCITY,
+  COYOTE_TIME_S,
+  JUMP_BUFFER_S,
+  MAX_FALL_SPEED,
+  JUMP_CUT_MULTIPLIER,
+  AIR_FAST_FALL_MULTIPLIER,
+  FAST_FALL_MIN_DOWNWARD_VELOCITY,
+  HORIZONTAL_MOVE_SPEED,
   PLAYER_HEIGHT,
   PLAYER_WIDTH,
   SPEED_INCREASE_PER_SECOND,
@@ -56,7 +63,7 @@ export function Game() {
   const visible = usePageVisibility();
   const input = useInput();
   const audio = useAudio();
-  const { isDark, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -70,6 +77,11 @@ export function Game() {
   const obstacleManagerRef = useRef(new ObstacleManager());
   const coinManagerRef = useRef(new CoinManager());
   // timers handled by managers
+
+  // Advanced jump/air control state
+  const coyoteTimerRef = useRef(0);
+  const jumpBufferTimerRef = useRef(0);
+  const jumpHeldRef = useRef(false);
 
   const resetGame = useCallback(() => {
     playerRef.current = createInitialPlayer();
@@ -113,10 +125,34 @@ export function Game() {
         setRunning(true);
       }
 
-      if (input.jumpPressed && player.onGround && !player.isJumping) {
+      // Track jump press for jump-cut & buffer
+      if (input.jumpPressed && !jumpHeldRef.current) {
+        jumpHeldRef.current = true;
+        jumpBufferTimerRef.current = JUMP_BUFFER_S;
+      } else if (!input.jumpPressed) {
+        jumpHeldRef.current = false;
+      }
+
+      // Coyote time window after leaving ground
+      if (player.onGround) {
+        coyoteTimerRef.current = COYOTE_TIME_S;
+      } else if (coyoteTimerRef.current > 0) {
+        coyoteTimerRef.current -= dt;
+      }
+
+      // Decrease jump buffer timer
+      if (jumpBufferTimerRef.current > 0) {
+        jumpBufferTimerRef.current -= dt;
+      }
+
+      // Execute buffered jump if allowed within coyote window
+      const canJump = (player.onGround || coyoteTimerRef.current > 0) && jumpBufferTimerRef.current > 0;
+      if (canJump) {
         player.velocityY = -JUMP_VELOCITY;
         player.onGround = false;
         player.isJumping = true;
+        jumpBufferTimerRef.current = 0;
+        coyoteTimerRef.current = 0;
         audio.playJump();
       }
 
@@ -135,7 +171,25 @@ export function Game() {
 
       // Physics integration for vertical motion
       if (!player.onGround) {
+        // Gravity with fall speed clamp
         player.velocityY += GRAVITY * dt;
+        if (player.velocityY > MAX_FALL_SPEED) player.velocityY = MAX_FALL_SPEED;
+
+        // Early release cuts upward velocity for variable jump height
+        if (!jumpHeldRef.current && player.velocityY < 0) {
+          player.velocityY += GRAVITY * dt * (JUMP_CUT_MULTIPLIER - 1);
+        }
+
+        // Fast-fall when holding down mid-air
+        if (input.duckHeld) {
+          if (player.velocityY < FAST_FALL_MIN_DOWNWARD_VELOCITY) {
+            player.velocityY = FAST_FALL_MIN_DOWNWARD_VELOCITY;
+          }
+          if (player.velocityY > 0) {
+            player.velocityY += GRAVITY * dt * (AIR_FAST_FALL_MULTIPLIER - 1);
+          }
+        }
+
         player.y += player.velocityY * dt;
         if (player.y + player.height >= GROUND_Y) {
           player.y = GROUND_Y - player.height;
@@ -144,6 +198,16 @@ export function Game() {
           player.isJumping = false;
         }
       }
+
+      // Horizontal player movement with clamping
+      if (input.leftHeld) {
+        player.x -= HORIZONTAL_MOVE_SPEED * dt;
+      } else if (input.rightHeld) {
+        player.x += HORIZONTAL_MOVE_SPEED * dt;
+      }
+      if (player.x < 10) player.x = 10;
+      const maxX = CANVAS_WIDTH - player.width - 10;
+      if (player.x > maxX) player.x = maxX;
 
       // Update managers
       obstacleManagerRef.current.update(dt, speed, score);
@@ -257,10 +321,10 @@ export function Game() {
             speed={speed}
             running={running}
             audioEnabled={audio.enabled}
-            isDark={isDark}
+            isDark={theme === "dark"}
             onToggleRunning={() => setRunning((r) => !r)}
             onToggleAudio={() => audio.setEnabled(!audio.enabled)}
-            onToggleTheme={toggleTheme}
+            onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
           />
 
           {!running && !gameOver && (

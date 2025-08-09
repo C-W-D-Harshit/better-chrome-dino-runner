@@ -3,11 +3,15 @@ import { useEffect, useState } from "react";
 export type InputState = {
   jumpPressed: boolean; // space/up
   duckHeld: boolean; // down
+  leftHeld: boolean; // ArrowLeft / A
+  rightHeld: boolean; // ArrowRight / D
 };
 
 export function useInput(): InputState {
   const [jumpPressed, setJumpPressed] = useState(false);
   const [duckHeld, setDuckHeld] = useState(false);
+  const [leftHeld, setLeftHeld] = useState(false);
+  const [rightHeld, setRightHeld] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -18,6 +22,14 @@ export function useInput(): InputState {
       if (e.code === "ArrowDown") {
         e.preventDefault();
         setDuckHeld(true);
+      }
+      if (e.code === "ArrowLeft" || e.code === "KeyA") {
+        e.preventDefault();
+        setLeftHeld(true);
+      }
+      if (e.code === "ArrowRight" || e.code === "KeyD") {
+        e.preventDefault();
+        setRightHeld(true);
       }
     };
 
@@ -30,6 +42,14 @@ export function useInput(): InputState {
         e.preventDefault();
         setDuckHeld(false);
       }
+      if (e.code === "ArrowLeft" || e.code === "KeyA") {
+        e.preventDefault();
+        setLeftHeld(false);
+      }
+      if (e.code === "ArrowRight" || e.code === "KeyD") {
+        e.preventDefault();
+        setRightHeld(false);
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -41,5 +61,5 @@ export function useInput(): InputState {
     };
   }, []);
 
-  return { jumpPressed, duckHeld };
+  return { jumpPressed, duckHeld, leftHeld, rightHeld };
 }

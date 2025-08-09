@@ -15,7 +15,7 @@ function getInitialTheme(): Theme {
   return prefersDark ? "dark" : "light";
 }
 
-export function useTheme() {
+export function useLegacyThemeHook() {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
