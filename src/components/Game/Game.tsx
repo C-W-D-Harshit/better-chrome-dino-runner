@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import GameCanvas from "./GameCanvas";
 import GameUI from "./GameUI";
 import GameHUD from "./GameHUD";
@@ -71,6 +71,8 @@ export function Game() {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(getStoredHighScore);
   const [speed, setSpeed] = useState(INITIAL_SPEED);
+  const [coinsCollected, setCoinsCollected] = useState(0);
+  const [topSpeed, setTopSpeed] = useState(INITIAL_SPEED);
 
   const playerRef = useRef<PlayerState>(createInitialPlayer());
   const obstaclesRef = useRef<Obstacle[]>([]);
@@ -83,6 +85,8 @@ export function Game() {
   const coyoteTimerRef = useRef(0);
   const jumpBufferTimerRef = useRef(0);
   const jumpHeldRef = useRef(false);
+  // Pause edge detection
+  const lastPauseTokenRef = useRef(0);
 
   const resetGame = useCallback(() => {
     playerRef.current = createInitialPlayer();
@@ -92,6 +96,8 @@ export function Game() {
     coinManagerRef.current.reset();
     setScore(0);
     setSpeed(INITIAL_SPEED);
+    setTopSpeed(INITIAL_SPEED);
+    setCoinsCollected(0);
     setGameOver(false);
   }, []);
 
@@ -113,25 +119,18 @@ export function Game() {
       // Increase speed and score
       setSpeed((s) => s + SPEED_INCREASE_PER_SECOND * dt);
       setScore((sc) => sc + (speed * dt) / 10);
+      setTopSpeed((ts) => (speed > ts ? speed : ts));
 
       const player = playerRef.current;
       const obstacles = obstaclesRef.current;
 
-      // Handle input: Pause toggle via 'P'
-      if (input.pauseToken !== 0) {
-        // toggle once when token changes
+      // Pause toggle via 'P' key: only act on edges
+      if (input.pauseToken !== lastPauseTokenRef.current) {
+        lastPauseTokenRef.current = input.pauseToken;
         setRunning((r) => !r);
-        // reset token by reducing it; we don't mutate input, so we rely on identity change each press
       }
 
-      // Handle input: Start/Retry and Jump
-      if (!running && !gameOver && input.jumpPressed) {
-        setRunning(true);
-      }
-      if (gameOver && input.jumpPressed) {
-        resetGame();
-        setRunning(true);
-      }
+      // Start/Retry mapping is handled by a dedicated key listener effect when not running or ended
 
       // Track jump press for jump-cut & buffer
       if (input.jumpPressed && !jumpHeldRef.current) {
@@ -259,7 +258,10 @@ export function Game() {
         );
         if (intersects) {
           audio.playCoin();
-          setScore((s) => s + 10);
+          // Score effect: coin value
+          setScore((s) => s + 100);
+          setCoinsCollected((n) => n + 1);
+          coinManagerRef.current.markCollected();
           coinManagerRef.current.remove(c.id);
         }
       }
@@ -282,6 +284,24 @@ export function Game() {
   );
 
   useGameLoop(running, onFrame);
+
+  // Map Space to Start/Restart only when game is not running or is ended; remove mapping when running
+  useEffect(() => {
+    if (running && !gameOver) return; // active only when idle or ended
+    const handler = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        if (!running && !gameOver) {
+          setRunning(true);
+        } else if (gameOver) {
+          resetGame();
+          setRunning(true);
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [running, gameOver, resetGame]);
 
   // Derived values for canvas render
   const playerForRender = useMemo(
@@ -326,6 +346,7 @@ export function Game() {
             gameOver={gameOver}
             scale={Number.isFinite(scale) && scale > 0 ? scale : 1}
             theme={theme}
+            running={running}
           />
 
           {/* Minimal HUD overlay */}
@@ -345,7 +366,7 @@ export function Game() {
           <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center">
             <div className="pointer-events-auto rounded-md border border-border bg-popover/70 px-2.5 py-1 text-[10px] text-muted-foreground backdrop-blur">
               <span className="hidden sm:inline">W/Up: Jump · S/Down: Duck/Fall · A/Left & D/Right: Move · </span>
-              <span>Space: Start/Retry · P: Pause</span>
+              <span>Space: Start/Retry · P: Pause · Coins: +100</span>
             </div>
           </div>
 
@@ -374,6 +395,9 @@ export function Game() {
           running={running}
           gameOver={gameOver}
           highScore={highScore}
+          score={score}
+          topSpeed={topSpeed}
+          coinsCollected={coinsCollected}
           onStart={() => setRunning(true)}
           onRestart={() => {
             resetGame();

@@ -5,11 +5,13 @@ export class CoinManager {
   private coins: Coin[] = [];
   private spawnTimerS = 0;
   private nextSpawnS = 1.2 + Math.random() * 1.4;
+  private collectedThisRun = 0;
 
   reset() {
     this.coins = [];
     this.spawnTimerS = 0;
     this.nextSpawnS = 1.2 + Math.random() * 1.4;
+    this.collectedThisRun = 0;
   }
 
   update(deltaS: number, speed: number) {
@@ -39,5 +41,13 @@ export class CoinManager {
   remove(id: string) {
     const idx = this.coins.findIndex((c) => c.id === id);
     if (idx >= 0) this.coins.splice(idx, 1);
+  }
+
+  markCollected() {
+    this.collectedThisRun += 1;
+  }
+
+  getCollectedThisRun() {
+    return this.collectedThisRun;
   }
 }
