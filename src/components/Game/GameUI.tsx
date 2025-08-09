@@ -1,4 +1,9 @@
-type GameUIProps = {
+import React from "react";
+
+/**
+ * Minimal start/restart UI. Main HUD is handled in-canvas/overlay.
+ */
+export type GameUIProps = {
   running: boolean;
   gameOver: boolean;
   highScore: number;
@@ -6,7 +11,13 @@ type GameUIProps = {
   onRestart: () => void;
 };
 
-export function GameUI({ running, gameOver, highScore, onStart, onRestart }: GameUIProps) {
+export function GameUI({
+  running,
+  gameOver,
+  highScore,
+  onStart,
+  onRestart,
+}: GameUIProps) {
   if (!running && !gameOver) {
     return (
       <div className="mt-6 flex flex-col items-center gap-3">
@@ -17,7 +28,9 @@ export function GameUI({ running, gameOver, highScore, onStart, onRestart }: Gam
         >
           Start
         </button>
-        <p className="text-xs text-muted-foreground">Press Space/ArrowUp to jump, ArrowDown to duck</p>
+        <p className="text-xs text-muted-foreground">
+          Press Space/ArrowUp to jump, ArrowDown to duck
+        </p>
       </div>
     );
   }
@@ -26,7 +39,9 @@ export function GameUI({ running, gameOver, highScore, onStart, onRestart }: Gam
     return (
       <div className="mt-6 flex flex-col items-center gap-3">
         <div className="text-sm font-medium text-foreground">Game Over</div>
-        <div className="text-xs text-muted-foreground">High score: {Math.floor(highScore)}</div>
+        <div className="text-xs text-muted-foreground">
+          High score: {Math.floor(highScore)}
+        </div>
         <button
           className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           onClick={onRestart}
