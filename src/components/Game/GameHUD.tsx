@@ -4,6 +4,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 /**
  * Minimal, theme-aware HUD overlay for the Dino Runner.
  * Renders compact score and high-score at the top-right, and tiny control buttons at the top-left.
@@ -68,18 +69,19 @@ export function GameHUD({
         {/* Play/Pause */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               onClick={onToggleRunning}
               aria-label={running ? "Pause" : "Play"}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-foreground/80 hover:bg-card/80"
+              className="h-8 w-8 rounded-full p-0 border-border bg-card text-foreground/80 hover:bg-card/80"
             >
               {running ? (
-                <Pause className="size-4" aria-hidden />
+                <Pause className="size-4 sm:size-5" aria-hidden />
               ) : (
-                <Play className="size-4" aria-hidden />
+                <Play className="size-4 sm:size-5" aria-hidden />
               )}
-            </button>
+            </Button>
           </TooltipTrigger>
           <TooltipContent sideOffset={6}>
             {running ? "Pause" : "Play"}
@@ -89,18 +91,19 @@ export function GameHUD({
         {/* Audio */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               onClick={onToggleAudio}
               aria-label={audioEnabled ? "Mute" : "Unmute"}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-foreground/80 hover:bg-card/80"
+              className="h-8 w-8 rounded-full p-0 border-border bg-card text-foreground/80 hover:bg-card/80"
             >
               {audioEnabled ? (
-                <Volume2 className="size-4" aria-hidden />
+                <Volume2 className="size-4 sm:size-5" aria-hidden />
               ) : (
-                <VolumeX className="size-4" aria-hidden />
+                <VolumeX className="size-4 sm:size-5" aria-hidden />
               )}
-            </button>
+            </Button>
           </TooltipTrigger>
           <TooltipContent sideOffset={6}>
             {audioEnabled ? "Mute" : "Unmute"}
@@ -110,18 +113,19 @@ export function GameHUD({
         {/* Theme */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               onClick={onToggleTheme}
               aria-label={isDark ? "Light mode" : "Dark mode"}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-foreground/80 hover:bg-card/80"
+              className="h-8 w-8 rounded-full p-0 border-border bg-card text-foreground/80 hover:bg-card/80"
             >
               {isDark ? (
-                <Sun className="size-4" aria-hidden />
+                <Sun className="size-4 sm:size-5" aria-hidden />
               ) : (
-                <Moon className="size-4" aria-hidden />
+                <Moon className="size-4 sm:size-5" aria-hidden />
               )}
-            </button>
+            </Button>
           </TooltipTrigger>
           <TooltipContent sideOffset={6}>
             {isDark ? "Light mode" : "Dark mode"}
@@ -129,16 +133,16 @@ export function GameHUD({
         </Tooltip>
 
         {/* Speed chip (subtle) */}
-        <div className="hidden sm:inline-flex items-center gap-1 rounded-full border border-border bg-card px-2 py-1 text-[10px] text-muted-foreground">
+        <div className="hidden sm:inline-flex items-center gap-1 rounded-full border border-border bg-card/90 px-2 py-1 text-[10px] text-muted-foreground backdrop-blur">
           <span className="text-foreground/70">Spd</span>
-          <span className="font-medium text-foreground tabular-nums">
+          <span className="font-medium text-foreground tabular-nums font-mono">
             {speedText}
           </span>
         </div>
       </div>
 
       {/* Score: top-right minimal block */}
-      <div className="pointer-events-none absolute right-2 top-2 select-none rounded-md border border-border bg-popover/70 px-2.5 py-1.5 backdrop-blur">
+      <div className="pointer-events-none absolute right-2 top-2 select-none rounded-md border border-border bg-popover/80 px-2.5 py-1.5 backdrop-blur shadow-xs">
         <div className="flex items-baseline gap-2 font-mono">
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
             HI {hiText}

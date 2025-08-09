@@ -229,6 +229,13 @@ export function Game() {
   return (
     <div className="w-full min-h-screen flex flex-col items-center justify-center p-4 sm:p-6">
       <div ref={containerRef} className="w-full max-w-[1100px]">
+        {/* Title */}
+        <div className="mb-3 flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full bg-primary" aria-hidden />
+          <h1 className="text-sm sm:text-base font-semibold text-foreground select-none">
+            Better Chrome Dino Runner
+          </h1>
+        </div>
         <div className="relative">
           <GameCanvas
             width={CANVAS_WIDTH}

@@ -1,4 +1,6 @@
-import React from "react";
+// React import retained for JSX runtime and type context in some tooling
+import { Button } from "@/components/ui/button";
+import { RotateCcw, Play } from "lucide-react";
 
 /**
  * Minimal start/restart UI. Main HUD is handled in-canvas/overlay.
@@ -21,13 +23,10 @@ export function GameUI({
   if (!running && !gameOver) {
     return (
       <div className="mt-6 flex flex-col items-center gap-3">
-        <button
-          className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          onClick={onStart}
-          aria-label="Start Game"
-        >
+        <Button onClick={onStart} aria-label="Start Game" className="h-10 px-6">
+          <Play className="size-4" />
           Start
-        </button>
+        </Button>
         <p className="text-xs text-muted-foreground">
           Press Space/ArrowUp to jump, ArrowDown to duck
         </p>
@@ -42,13 +41,14 @@ export function GameUI({
         <div className="text-xs text-muted-foreground">
           High score: {Math.floor(highScore)}
         </div>
-        <button
-          className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        <Button
           onClick={onRestart}
           aria-label="Restart Game"
+          className="h-10 px-6"
         >
+          <RotateCcw className="size-4" />
           Restart
-        </button>
+        </Button>
       </div>
     );
   }
