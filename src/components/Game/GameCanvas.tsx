@@ -22,15 +22,20 @@ export function GameCanvas({ width, height, groundY, player, obstacles, score, s
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Clear
+    // Clear & background using CSS variables via computed styles
     ctx.clearRect(0, 0, width, height);
+    const styles = getComputedStyle(document.documentElement);
+    const bg = styles.getPropertyValue("--color-background").trim() || "#ffffff";
+    const fg = styles.getPropertyValue("--color-foreground").trim() || "#111827";
+    const muted = styles.getPropertyValue("--color-muted").trim() || "#e5e7eb";
+    const destructive = styles.getPropertyValue("--color-destructive").trim() || "#ef4444";
 
-    // Sky
-    ctx.fillStyle = "#f6f7fb";
+    // Background
+    ctx.fillStyle = bg;
     ctx.fillRect(0, 0, width, height);
 
     // Ground line
-    ctx.strokeStyle = "#b2b7c2";
+    ctx.strokeStyle = muted;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(0, groundY + 0.5);
@@ -38,24 +43,24 @@ export function GameCanvas({ width, height, groundY, player, obstacles, score, s
     ctx.stroke();
 
     // Parallax hints (simple)
-    ctx.fillStyle = "#e3e7ef";
+    ctx.fillStyle = muted;
     for (let i = 0; i < 10; i++) {
       const x = ((i * 150 - (performance.now() / 10) % (width + 200)) + width + 200) % (width + 200) - 100;
       ctx.fillRect(x, groundY - 50, 40, 8);
     }
 
     // Player
-    ctx.fillStyle = gameOver ? "#ef4444" : "#111827";
+    ctx.fillStyle = gameOver ? destructive : fg;
     ctx.fillRect(player.x, player.y, player.width, player.height);
 
     // Obstacles
-    ctx.fillStyle = "#374151";
+    ctx.fillStyle = fg;
     for (const obs of obstacles) {
       ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
     }
 
     // HUD
-    ctx.fillStyle = "#111827";
+    ctx.fillStyle = fg;
     ctx.font = "16px ui-sans-serif, system-ui";
     ctx.textAlign = "right";
     ctx.fillText(`SPEED ${Math.round(speed)}`, width - 12, 22);
@@ -64,7 +69,7 @@ export function GameCanvas({ width, height, groundY, player, obstacles, score, s
 
   return (
     <div className="w-full flex items-center justify-center">
-      <canvas ref={canvasRef} width={width} height={height} className="rounded-md shadow-sm bg-white" />
+      <canvas ref={canvasRef} width={width} height={height} className="rounded-md shadow-sm bg-card" />
     </div>
   );
 }
