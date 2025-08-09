@@ -366,7 +366,7 @@ export function Game() {
           <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center">
             <div className="pointer-events-auto rounded-md border border-border bg-popover/70 px-2.5 py-1 text-[10px] text-muted-foreground backdrop-blur">
               <span className="hidden sm:inline">W/Up: Jump · S/Down: Duck/Fall · A/Left & D/Right: Move · </span>
-              <span>Space: Start/Retry · P: Pause</span>
+              <span>Space: Start/Retry · P: Pause · Coins: +100</span>
             </div>
           </div>
 
