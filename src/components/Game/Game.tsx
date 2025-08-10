@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import GameCanvas from "./GameCanvas";
 import GameUI from "./GameUI";
 import GameHUD from "./GameHUD";
+import { MobileControls } from "./MobileControls";
 import { useGameLoop } from "@/hooks/useGameLoop";
 import { usePageVisibility } from "@/hooks/useVisibility";
 import { useInput } from "@/hooks/useInput";
@@ -467,37 +468,69 @@ export function Game() {
     [score, speed, running, gameOver]
   );
 
-  // Responsive sizing
+  // Responsive sizing - more aggressive scaling for mobile
   const { ref: containerRef, width: containerWidth } =
     useElementSize<HTMLDivElement>();
-  const targetWidth = Math.min(Math.max(320, containerWidth - 32), 1000);
+  
+  // Check if mobile
+  const isMobile = containerWidth <= 768;
+  
+  // More aggressive scaling for mobile to use more screen space
+  let targetWidth;
+  if (isMobile) {
+    // On mobile, use almost full width but also consider viewport height
+    const viewportHeight = window.innerHeight;
+    const availableHeight = viewportHeight - 120; // Account for controls and UI
+    const maxWidthFromHeight = (availableHeight / CANVAS_HEIGHT) * CANVAS_WIDTH;
+    const maxWidthFromContainer = containerWidth - 16;
+    
+    targetWidth = Math.min(maxWidthFromHeight, maxWidthFromContainer, containerWidth * 0.98);
+  } else {
+    targetWidth = Math.min(Math.max(320, containerWidth - 32), 1000);
+  }
+  
   const scale = targetWidth / CANVAS_WIDTH;
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center justify-center p-4 sm:p-6" data-theme={theme}>
+    <div className="w-full min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 md:p-6" data-theme={theme}>
       <div ref={containerRef} className="w-full max-w-[1100px]">
-        {/* Title */}
-        <div className="mb-3 flex items-center gap-2">
+        {/* Title - smaller on mobile */}
+        <div className="mb-2 sm:mb-3 flex items-center gap-2">
           <div className="h-2 w-2 rounded-full bg-primary" aria-hidden />
-          <h1 className="text-sm sm:text-base font-semibold text-foreground select-none">
+          <h1 className="text-xs sm:text-sm md:text-base font-semibold text-foreground select-none">
             Better Chrome Dino Runner
           </h1>
         </div>
         <div className="relative">
-          <GameCanvas
-            width={CANVAS_WIDTH}
-            height={CANVAS_HEIGHT}
-            groundY={GROUND_Y}
-            player={playerForRender}
-            obstacles={obstaclesForRender}
-            coins={coinsForRender}
-            score={score}
-            speed={speed}
-            gameOver={gameOver}
-            scale={Number.isFinite(scale) && scale > 0 ? scale : 1}
-            theme={theme}
-            running={running}
-          />
+          {/* Canvas with tap-to-jump for mobile */}
+          <div 
+            className={`relative ${isMobile ? 'mobile-canvas-wrapper' : ''}`}
+            style={{ touchAction: 'manipulation' }}
+            onTouchStart={(e) => {
+              // Simple tap-to-jump on canvas area
+              e.preventDefault();
+              input.touchActions.triggerJump();
+            }}
+            onClick={() => {
+              // Also allow click-to-jump for testing
+              input.touchActions.triggerJump();
+            }}
+          >
+            <GameCanvas
+              width={CANVAS_WIDTH}
+              height={CANVAS_HEIGHT}
+              groundY={GROUND_Y}
+              player={playerForRender}
+              obstacles={obstaclesForRender}
+              coins={coinsForRender}
+              score={score}
+              speed={speed}
+              gameOver={gameOver}
+              scale={Number.isFinite(scale) && scale > 0 ? scale : 1}
+              theme={theme}
+              running={running}
+            />
+          </div>
 
           {/* Minimal HUD overlay */}
           <GameHUD
@@ -512,19 +545,22 @@ export function Game() {
             onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
           />
 
-          {/* Controls hint (non-blocking) */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center">
-            <div className="pointer-events-auto rounded-md border border-border bg-popover/70 px-2.5 py-1 text-[10px] text-muted-foreground backdrop-blur">
-              <span className="hidden sm:inline">W/Up: Jump · S/Down: Duck/Fall · A/Left & D/Right: Move · </span>
-              <span>Space: Start/Retry · P: Pause · Coins: +100</span>
+          {/* Controls hint - completely hidden on mobile */}
+          {!isMobile && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center">
+              <div className="pointer-events-auto rounded-md border border-border bg-popover/70 px-2.5 py-1 text-[10px] text-muted-foreground backdrop-blur">
+                <span className="hidden sm:inline">W/Up: Jump · S/Down: Duck/Fall · A/Left & D/Right: Move · </span>
+                <span>Space: Start/Retry · P: Pause · Coins: +100</span>
+              </div>
             </div>
-          </div>
+          )}
 
           {!running && !gameOver && (
             <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-2">
               <div className="pointer-events-auto rounded-md border border-border bg-popover/70 backdrop-blur px-3 py-2">
                 <div className="text-xs sm:text-sm text-muted-foreground">
-                  Press Space to start
+                  <span className="block md:hidden">Tap to start</span>
+                  <span className="hidden md:block">Press Space to start</span>
                 </div>
               </div>
             </div>
@@ -534,27 +570,43 @@ export function Game() {
             <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-2">
               <div className="pointer-events-auto rounded-md border border-border bg-popover/70 backdrop-blur px-3 py-2">
                 <div className="text-xs sm:text-sm text-muted-foreground">
-                  Crashed! Press Space to retry
+                  <span className="block md:hidden">Crashed! Tap to retry</span>
+                  <span className="hidden md:block">Crashed! Press Space to retry</span>
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        <GameUI
-          running={running}
-          gameOver={gameOver}
-          highScore={highScore}
-          score={score}
-          topSpeed={topSpeed}
-          coinsCollected={coinsCollected}
-          onStart={() => setRunning(true)}
-          onRestart={() => {
-            resetGame();
-            setRunning(true);
-          }}
-        />
+        {/* Game UI (stats, etc.) - smaller on mobile */}
+        <div className={isMobile ? "mt-2" : ""}>
+          <GameUI
+            running={running}
+            gameOver={gameOver}
+            highScore={highScore}
+            score={score}
+            topSpeed={topSpeed}
+            coinsCollected={coinsCollected}
+            onStart={() => setRunning(true)}
+            onRestart={() => {
+              resetGame();
+              setRunning(true);
+            }}
+          />
+        </div>
       </div>
+
+      {/* Mobile Controls */}
+      <MobileControls
+        touchActions={input.touchActions}
+        running={running}
+        gameOver={gameOver}
+        onStart={() => setRunning(true)}
+        onRestart={() => {
+          resetGame();
+          setRunning(true);
+        }}
+      />
     </div>
   );
 }
