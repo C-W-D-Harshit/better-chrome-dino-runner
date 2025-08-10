@@ -166,9 +166,10 @@ export function Game() {
       if (!visible) return;
 
       // Increase speed and score
-      setSpeed((s) => {
-        const newSpeed = s + SPEED_INCREASE_PER_SECOND * dt;
-        
+      // Compute new speed first to avoid stale value usage
+      const newSpeed = speed + SPEED_INCREASE_PER_SECOND * dt;
+      
+      setSpeed(() => {
         // Check for speed milestone
         if (isSpeedMilestone(Math.floor(newSpeed)) && Math.floor(newSpeed) > lastSpeedMilestoneRef.current) {
           lastSpeedMilestoneRef.current = Math.floor(newSpeed);
@@ -184,7 +185,7 @@ export function Game() {
       });
       
       setScore((sc) => {
-        const newScore = sc + (speed * dt) / 10;
+        const newScore = sc + (newSpeed * dt) / 10; // Use newSpeed instead of stale speed
         
         // Check for score milestone
         if (isScoreMilestone(Math.floor(newScore)) && Math.floor(newScore) > lastScoreMilestoneRef.current) {
@@ -200,7 +201,7 @@ export function Game() {
         return newScore;
       });
       
-      setTopSpeed((ts) => (speed > ts ? speed : ts));
+      setTopSpeed((ts) => (newSpeed > ts ? newSpeed : ts)); // Use newSpeed instead of stale speed
 
       const player = playerRef.current;
       const obstacles = obstaclesRef.current;
@@ -421,6 +422,9 @@ export function Game() {
       // This is a new game start
       gameStartTimeRef.current = Date.now();
       const sessionId = GameAnalytics.getSessionId();
+      
+      // Associate session with PostHog for proper event tracking
+      analytics.identifyPlayer(sessionId);
       
       analytics.trackEvent("game_started", {
         session_id: sessionId,

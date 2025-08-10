@@ -1,6 +1,17 @@
 import { usePostHog } from "posthog-js/react";
 
 /**
+ * Analytics property types
+ */
+export interface AnalyticsProperties {
+  [key: string]: string | number | boolean | null | undefined;
+}
+
+export interface FeatureFlagValue {
+  [key: string]: string | number | boolean;
+}
+
+/**
  * Game Analytics Events Interface
  * Defines all the trackable events in the Chrome Dino Runner game
  */
@@ -127,7 +138,7 @@ export function useGameAnalytics() {
       user_agent: navigator.userAgent,
       screen_width: window.screen.width,
       screen_height: window.screen.height,
-      timestamp: Date.now(),
+      event_timestamp: Date.now(), // Renamed to avoid shadowing caller's timestamp
     };
 
     posthog.capture(eventName, enhancedProperties);
@@ -142,7 +153,7 @@ export function useGameAnalytics() {
   /**
    * Identify the player with session information
    */
-  const identifyPlayer = (sessionId: string, properties?: Record<string, any>): void => {
+  const identifyPlayer = (sessionId: string, properties?: AnalyticsProperties): void => {
     if (!posthog) return;
 
     posthog.identify(sessionId, {
@@ -155,7 +166,7 @@ export function useGameAnalytics() {
   /**
    * Set user properties for analytics
    */
-  const setUserProperties = (properties: Record<string, any>): void => {
+  const setUserProperties = (properties: AnalyticsProperties): void => {
     if (!posthog) return;
 
     posthog.setPersonProperties(properties);
@@ -164,7 +175,7 @@ export function useGameAnalytics() {
   /**
    * Track feature flag usage
    */
-  const trackFeatureFlag = (flagName: string, value: any): void => {
+  const trackFeatureFlag = (flagName: string, value: string | number | boolean): void => {
     if (!posthog) return;
 
     posthog.capture("feature_flag_used", {
@@ -178,7 +189,8 @@ export function useGameAnalytics() {
    * Start a new analytics session
    */
   const startSession = (): string => {
-    const sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+    // Use GameAnalytics as single source of truth for session management
+    const sessionId = GameAnalytics.initSession();
     identifyPlayer(sessionId);
     return sessionId;
   };
@@ -223,7 +235,7 @@ export class GameAnalytics {
    * Initialize analytics session
    */
   static initSession(): string {
-    this.sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+    this.sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     this.gameStartTime = Date.now();
     this.resetActionCounts();
     return this.sessionId;
