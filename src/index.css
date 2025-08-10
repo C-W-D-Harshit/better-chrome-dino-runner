@@ -169,4 +169,22 @@
   body {
     @apply bg-background text-foreground antialiased;
   }
+  
+  /* Fix canvas click/tap animations and interactions */
+  canvas {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
+  
+  canvas:focus,
+  canvas:active {
+    outline: none !important;
+    box-shadow: none !important;
+  }
 }
