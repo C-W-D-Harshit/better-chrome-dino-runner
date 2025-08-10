@@ -337,7 +337,8 @@ export function Game() {
         <div className="relative">
           {/* Canvas with tap-to-jump for mobile */}
           <div 
-            className="relative touch-manipulation"
+            className="relative"
+            style={{ touchAction: 'manipulation' }}
             onTouchStart={(e) => {
               // Simple tap-to-jump on canvas area
               e.preventDefault();
