@@ -208,6 +208,8 @@
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
+    /* Allow canvas to be bigger on mobile */
+    max-height: 70vh !important;
   }
   
   /* Game container adjustments for mobile */
@@ -215,6 +217,20 @@
     height: 100vh;
     overflow: hidden;
     position: relative;
+    padding: 0.5rem !important;
+  }
+  
+  /* Make the game take up more vertical space on mobile */
+  [data-theme] {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  
+  /* Ensure game canvas wrapper uses available space */
+  .mobile-canvas-wrapper {
+    height: auto;
+    min-height: 40vh;
+    max-height: 70vh;
   }
 }
 

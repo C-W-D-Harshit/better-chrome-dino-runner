@@ -151,71 +151,71 @@ export function MobileControls({
       </div>
 
       {/* Mobile control buttons */}
-      <div className="fixed bottom-4 left-4 right-4 z-20 pointer-events-none">
+      <div className="fixed bottom-2 left-2 right-2 z-20 pointer-events-none">
         <div className="flex justify-between items-end pointer-events-auto">
           {/* Left side - Movement controls */}
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-1.5">
             {/* Duck/Down control */}
             <Button
               variant="outline"
               size="icon"
-              className="w-12 h-12 bg-background/80 backdrop-blur border-2 border-border shadow-lg active:scale-95 transition-transform touch-manipulation"
+              className="w-11 h-11 bg-background/90 backdrop-blur border-2 border-border shadow-lg active:scale-95 transition-transform touch-manipulation"
               onTouchStart={handleTouchStartHold(touchActions.setDuckHeld)}
               onTouchEnd={handleTouchEnd(touchActions.setDuckHeld)}
               onMouseDown={() => touchActions.setDuckHeld(true)}
               onMouseUp={() => touchActions.setDuckHeld(false)}
               onMouseLeave={() => touchActions.setDuckHeld(false)}
             >
-              <ChevronDown className="w-6 h-6" />
+              <ChevronDown className="w-5 h-5" />
             </Button>
             
             {/* Horizontal movement */}
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <Button
                 variant="outline"
                 size="icon"
-                className="w-12 h-12 bg-background/80 backdrop-blur border-2 border-border shadow-lg active:scale-95 transition-transform touch-manipulation"
+                className="w-11 h-11 bg-background/90 backdrop-blur border-2 border-border shadow-lg active:scale-95 transition-transform touch-manipulation"
                 onTouchStart={handleTouchStartHold(touchActions.setLeftHeld)}
                 onTouchEnd={handleTouchEnd(touchActions.setLeftHeld)}
                 onMouseDown={() => touchActions.setLeftHeld(true)}
                 onMouseUp={() => touchActions.setLeftHeld(false)}
                 onMouseLeave={() => touchActions.setLeftHeld(false)}
               >
-                <ChevronLeft className="w-6 h-6" />
+                <ChevronLeft className="w-5 h-5" />
               </Button>
               <Button
                 variant="outline"
                 size="icon"
-                className="w-12 h-12 bg-background/80 backdrop-blur border-2 border-border shadow-lg active:scale-95 transition-transform touch-manipulation"
+                className="w-11 h-11 bg-background/90 backdrop-blur border-2 border-border shadow-lg active:scale-95 transition-transform touch-manipulation"
                 onTouchStart={handleTouchStartHold(touchActions.setRightHeld)}
                 onTouchEnd={handleTouchEnd(touchActions.setRightHeld)}
                 onMouseDown={() => touchActions.setRightHeld(true)}
                 onMouseUp={() => touchActions.setRightHeld(false)}
                 onMouseLeave={() => touchActions.setRightHeld(false)}
               >
-                <ChevronRight className="w-6 h-6" />
+                <ChevronRight className="w-5 h-5" />
               </Button>
             </div>
           </div>
 
           {/* Right side - Action controls */}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             {/* Jump control */}
             <Button
               variant="default"
               size="icon"
-              className="w-14 h-14 bg-primary text-primary-foreground shadow-lg active:scale-95 transition-transform touch-manipulation"
+              className="w-12 h-12 bg-primary text-primary-foreground shadow-lg active:scale-95 transition-transform touch-manipulation"
               onTouchStart={handleTouchStart(touchActions.triggerJump)}
               onClick={touchActions.triggerJump}
             >
-              <ChevronUp className="w-7 h-7" />
+              <ChevronUp className="w-6 h-6" />
             </Button>
             
             {/* Pause/Start/Restart control */}
             <Button
               variant="outline"
               size="icon"
-              className="w-12 h-12 bg-background/80 backdrop-blur border-2 border-border shadow-lg active:scale-95 transition-transform touch-manipulation"
+              className="w-11 h-11 bg-background/90 backdrop-blur border-2 border-border shadow-lg active:scale-95 transition-transform touch-manipulation"
               onTouchStart={handleTouchStart(() => {
                 if (!running && !gameOver) {
                   onStart();
@@ -236,20 +236,20 @@ export function MobileControls({
               }}
             >
               {!running && !gameOver ? (
-                <Play className="w-5 h-5" />
+                <Play className="w-4 h-4" />
               ) : gameOver ? (
-                <Play className="w-5 h-5" />
+                <Play className="w-4 h-4" />
               ) : (
-                <Pause className="w-5 h-5" />
+                <Pause className="w-4 h-4" />
               )}
             </Button>
           </div>
         </div>
         
-        {/* Mobile controls hint */}
-        <div className="mt-2 flex justify-center">
-          <div className="rounded-md border border-border bg-popover/70 px-2 py-1 text-[10px] text-muted-foreground backdrop-blur">
-            Swipe or tap: ↑ Jump · ↓ Duck · ←→ Move · ⏸ Pause
+        {/* Mobile controls hint - smaller and more compact */}
+        <div className="mt-1 flex justify-center">
+          <div className="rounded-md border border-border bg-popover/80 backdrop-blur px-2 py-0.5 text-[9px] text-muted-foreground">
+            Swipe or tap: ↑ Jump · ↓ Duck · ←→ Move
           </div>
         </div>
       </div>
