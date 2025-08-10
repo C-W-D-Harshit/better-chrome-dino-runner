@@ -170,3 +170,63 @@
     @apply bg-background text-foreground antialiased;
   }
 }
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  /* Prevent scrolling and zooming on mobile */
+  html {
+    overflow: hidden;
+    position: fixed;
+    height: 100%;
+    width: 100%;
+  }
+  
+  body {
+    overflow: hidden;
+    position: fixed;
+    height: 100%;
+    width: 100%;
+    /* Disable text selection on mobile */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    /* Disable touch callouts */
+    -webkit-touch-callout: none;
+    /* Prevent zoom on double tap */
+    touch-action: manipulation;
+  }
+  
+  /* Optimize touch targets */
+  button, [role="button"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Ensure proper canvas scaling on mobile */
+  canvas {
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  
+  /* Game container adjustments for mobile */
+  .mobile-game-container {
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+}
+
+/* Improve button touch feedback */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  /* Add a subtle touch effect */
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.touch-manipulation:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}

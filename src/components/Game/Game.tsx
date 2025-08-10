@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import GameCanvas from "./GameCanvas";
 import GameUI from "./GameUI";
 import GameHUD from "./GameHUD";
+import { MobileControls } from "./MobileControls";
 import { useGameLoop } from "@/hooks/useGameLoop";
 import { usePageVisibility } from "@/hooks/useVisibility";
 import { useInput } from "@/hooks/useInput";
@@ -324,7 +325,7 @@ export function Game() {
   const scale = targetWidth / CANVAS_WIDTH;
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center justify-center p-4 sm:p-6" data-theme={theme}>
+    <div className="w-full min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 md:mobile-game-container" data-theme={theme}>
       <div ref={containerRef} className="w-full max-w-[1100px]">
         {/* Title */}
         <div className="mb-3 flex items-center gap-2">
@@ -334,20 +335,34 @@ export function Game() {
           </h1>
         </div>
         <div className="relative">
-          <GameCanvas
-            width={CANVAS_WIDTH}
-            height={CANVAS_HEIGHT}
-            groundY={GROUND_Y}
-            player={playerForRender}
-            obstacles={obstaclesForRender}
-            coins={coinsForRender}
-            score={score}
-            speed={speed}
-            gameOver={gameOver}
-            scale={Number.isFinite(scale) && scale > 0 ? scale : 1}
-            theme={theme}
-            running={running}
-          />
+          {/* Canvas with tap-to-jump for mobile */}
+          <div 
+            className="relative touch-manipulation"
+            onTouchStart={(e) => {
+              // Simple tap-to-jump on canvas area
+              e.preventDefault();
+              input.touchActions.triggerJump();
+            }}
+            onClick={() => {
+              // Also allow click-to-jump for testing
+              input.touchActions.triggerJump();
+            }}
+          >
+            <GameCanvas
+              width={CANVAS_WIDTH}
+              height={CANVAS_HEIGHT}
+              groundY={GROUND_Y}
+              player={playerForRender}
+              obstacles={obstaclesForRender}
+              coins={coinsForRender}
+              score={score}
+              speed={speed}
+              gameOver={gameOver}
+              scale={Number.isFinite(scale) && scale > 0 ? scale : 1}
+              theme={theme}
+              running={running}
+            />
+          </div>
 
           {/* Minimal HUD overlay */}
           <GameHUD
@@ -362,9 +377,9 @@ export function Game() {
             onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
           />
 
-          {/* Controls hint (non-blocking) */}
+          {/* Controls hint (hide on mobile since we have mobile controls) */}
           <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center">
-            <div className="pointer-events-auto rounded-md border border-border bg-popover/70 px-2.5 py-1 text-[10px] text-muted-foreground backdrop-blur">
+            <div className="pointer-events-auto rounded-md border border-border bg-popover/70 px-2.5 py-1 text-[10px] text-muted-foreground backdrop-blur md:hidden lg:block">
               <span className="hidden sm:inline">W/Up: Jump · S/Down: Duck/Fall · A/Left & D/Right: Move · </span>
               <span>Space: Start/Retry · P: Pause · Coins: +100</span>
             </div>
@@ -374,7 +389,8 @@ export function Game() {
             <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-2">
               <div className="pointer-events-auto rounded-md border border-border bg-popover/70 backdrop-blur px-3 py-2">
                 <div className="text-xs sm:text-sm text-muted-foreground">
-                  Press Space to start
+                  <span className="block md:hidden">Tap to start</span>
+                  <span className="hidden md:block">Press Space to start</span>
                 </div>
               </div>
             </div>
@@ -384,13 +400,15 @@ export function Game() {
             <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-2">
               <div className="pointer-events-auto rounded-md border border-border bg-popover/70 backdrop-blur px-3 py-2">
                 <div className="text-xs sm:text-sm text-muted-foreground">
-                  Crashed! Press Space to retry
+                  <span className="block md:hidden">Crashed! Tap to retry</span>
+                  <span className="hidden md:block">Crashed! Press Space to retry</span>
                 </div>
               </div>
             </div>
           )}
         </div>
 
+        {/* Game UI (stats, etc.) */}
         <GameUI
           running={running}
           gameOver={gameOver}
@@ -405,6 +423,18 @@ export function Game() {
           }}
         />
       </div>
+
+      {/* Mobile Controls */}
+      <MobileControls
+        touchActions={input.touchActions}
+        running={running}
+        gameOver={gameOver}
+        onStart={() => setRunning(true)}
+        onRestart={() => {
+          resetGame();
+          setRunning(true);
+        }}
+      />
     </div>
   );
 }
