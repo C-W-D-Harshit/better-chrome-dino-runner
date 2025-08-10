@@ -33,6 +33,12 @@ import type { PlayerState } from "@/types/player";
 import type { Coin } from "@/types/collectibles";
 import { ObstacleManager } from "@/components/Obstacles/ObstacleManager";
 import { CoinManager } from "@/components/Collectibles/CoinManager";
+import { 
+  useGameAnalytics, 
+  GameAnalytics, 
+  isScoreMilestone, 
+  isSpeedMilestone 
+} from "@/lib/analytics";
 
 function createInitialPlayer(): PlayerState {
   return {
@@ -65,6 +71,7 @@ export function Game() {
   const input = useInput();
   const audio = useAudio();
   const { theme, setTheme } = useTheme();
+  const analytics = useGameAnalytics();
 
   const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -73,6 +80,12 @@ export function Game() {
   const [speed, setSpeed] = useState(INITIAL_SPEED);
   const [coinsCollected, setCoinsCollected] = useState(0);
   const [topSpeed, setTopSpeed] = useState(INITIAL_SPEED);
+
+  // Analytics state tracking
+  const lastScoreMilestoneRef = useRef<number>(0);
+  const lastSpeedMilestoneRef = useRef<number>(0);
+  const gameStartTimeRef = useRef<number>(0);
+  const collisionCauseRef = useRef<"obstacle_collision" | "manual_restart">("manual_restart");
 
   const playerRef = useRef<PlayerState>(createInitialPlayer());
   const obstaclesRef = useRef<Obstacle[]>([]);
@@ -99,17 +112,53 @@ export function Game() {
     setTopSpeed(INITIAL_SPEED);
     setCoinsCollected(0);
     setGameOver(false);
+    
+    // Reset analytics tracking
+    lastScoreMilestoneRef.current = 0;
+    lastSpeedMilestoneRef.current = 0;
+    gameStartTimeRef.current = 0;
+    collisionCauseRef.current = "manual_restart";
+    GameAnalytics.resetSession();
   }, []);
 
   const endGame = useCallback(() => {
     setRunning(false);
     setGameOver(true);
+    
+    // Track game end analytics
+    const sessionId = GameAnalytics.getSessionId();
+    const timePlayedSeconds = GameAnalytics.getTimePlayedSeconds();
+    const actionCounts = GameAnalytics.getActionCounts();
+    
+    analytics.trackEvent("game_ended", {
+      session_id: sessionId,
+      final_score: score,
+      time_played_seconds: timePlayedSeconds,
+      coins_collected: coinsCollected,
+      top_speed_reached: topSpeed,
+      obstacles_avoided: actionCounts.obstaclesAvoided,
+      jumps_made: actionCounts.jumps,
+      ducks_made: actionCounts.ducks,
+      cause_of_death: collisionCauseRef.current,
+    });
+    
     setHighScore((prev) => {
       const newHigh = Math.max(prev, score);
       setStoredHighScore(newHigh);
+      
+      // Track high score achievement
+      if (newHigh > prev) {
+        analytics.trackEvent("high_score_achieved", {
+          session_id: sessionId,
+          new_high_score: newHigh,
+          previous_high_score: prev,
+          improvement: newHigh - prev,
+        });
+      }
+      
       return newHigh;
     });
-  }, [score]);
+  }, [score, coinsCollected, topSpeed, analytics]);
 
   const onFrame = useCallback(
     (dt: number) => {
@@ -117,8 +166,40 @@ export function Game() {
       if (!visible) return;
 
       // Increase speed and score
-      setSpeed((s) => s + SPEED_INCREASE_PER_SECOND * dt);
-      setScore((sc) => sc + (speed * dt) / 10);
+      setSpeed((s) => {
+        const newSpeed = s + SPEED_INCREASE_PER_SECOND * dt;
+        
+        // Check for speed milestone
+        if (isSpeedMilestone(Math.floor(newSpeed)) && Math.floor(newSpeed) > lastSpeedMilestoneRef.current) {
+          lastSpeedMilestoneRef.current = Math.floor(newSpeed);
+          analytics.trackEvent("speed_milestone_reached", {
+            session_id: GameAnalytics.getSessionId(),
+            speed_level: Math.floor(newSpeed),
+            score_at_milestone: score,
+            time_to_reach_seconds: GameAnalytics.getTimePlayedSeconds(),
+          });
+        }
+        
+        return newSpeed;
+      });
+      
+      setScore((sc) => {
+        const newScore = sc + (speed * dt) / 10;
+        
+        // Check for score milestone
+        if (isScoreMilestone(Math.floor(newScore)) && Math.floor(newScore) > lastScoreMilestoneRef.current) {
+          lastScoreMilestoneRef.current = Math.floor(newScore);
+          analytics.trackEvent("score_milestone_reached", {
+            session_id: GameAnalytics.getSessionId(),
+            milestone_score: Math.floor(newScore),
+            time_to_reach_seconds: GameAnalytics.getTimePlayedSeconds(),
+            coins_collected: coinsCollected,
+          });
+        }
+        
+        return newScore;
+      });
+      
       setTopSpeed((ts) => (speed > ts ? speed : ts));
 
       const player = playerRef.current;
@@ -161,10 +242,33 @@ export function Game() {
         jumpBufferTimerRef.current = 0;
         coyoteTimerRef.current = 0;
         audio.playJump();
+        
+        // Track jump analytics
+        GameAnalytics.incrementJumps();
+        analytics.trackEvent("player_jumped", {
+          session_id: GameAnalytics.getSessionId(),
+          current_score: score,
+          current_speed: speed,
+          player_x: player.x,
+          player_y: player.y,
+        });
       }
 
       // Ducking
+      const wasDucking = player.isDucking;
       player.isDucking = input.duckHeld && player.onGround;
+      
+      // Track duck start analytics
+      if (player.isDucking && !wasDucking) {
+        GameAnalytics.incrementDucks();
+        analytics.trackEvent("player_ducked", {
+          session_id: GameAnalytics.getSessionId(),
+          current_score: score,
+          current_speed: speed,
+          player_x: player.x,
+        });
+      }
+      
       if (player.isDucking) {
         // Adjust height while ducking
         const prevBottom = player.y + player.height;
@@ -238,6 +342,19 @@ export function Game() {
             o.height - 4
           )
         ) {
+          // Track collision analytics
+          analytics.trackEvent("obstacle_collision", {
+            session_id: GameAnalytics.getSessionId(),
+            obstacle_type: o.type,
+            collision_score: score,
+            collision_speed: speed,
+            player_x: player.x,
+            player_y: player.y,
+            obstacle_x: o.x,
+            obstacle_y: o.y,
+          });
+          
+          collisionCauseRef.current = "obstacle_collision";
           audio.playCrash();
           endGame();
           break;
@@ -258,6 +375,17 @@ export function Game() {
         );
         if (intersects) {
           audio.playCoin();
+          
+          // Track coin collection analytics
+          analytics.trackEvent("coin_collected", {
+            session_id: GameAnalytics.getSessionId(),
+            coin_value: 100,
+            total_coins: coinsCollected + 1,
+            current_score: score,
+            coin_x: c.x,
+            coin_y: c.y,
+          });
+          
           // Score effect: coin value
           setScore((s) => s + 100);
           setCoinsCollected((n) => n + 1);
@@ -267,7 +395,9 @@ export function Game() {
       }
     },
     [
+      analytics,
       audio,
+      coinsCollected,
       endGame,
       gameOver,
       input.duckHeld,
@@ -284,6 +414,22 @@ export function Game() {
   );
 
   useGameLoop(running, onFrame);
+
+  // Track game start analytics
+  useEffect(() => {
+    if (running && !gameOver && gameStartTimeRef.current === 0) {
+      // This is a new game start
+      gameStartTimeRef.current = Date.now();
+      const sessionId = GameAnalytics.getSessionId();
+      
+      analytics.trackEvent("game_started", {
+        session_id: sessionId,
+        timestamp: gameStartTimeRef.current,
+      });
+      
+      analytics.trackGameView(sessionId);
+    }
+  }, [running, gameOver, analytics]);
 
   // Map Space to Start/Restart only when game is not running or is ended; remove mapping when running
   useEffect(() => {
