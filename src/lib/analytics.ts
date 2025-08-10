@@ -178,7 +178,7 @@ export function useGameAnalytics() {
    * Start a new analytics session
    */
   const startSession = (): string => {
-    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
     identifyPlayer(sessionId);
     return sessionId;
   };
