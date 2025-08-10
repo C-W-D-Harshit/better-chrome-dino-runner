@@ -11,8 +11,6 @@ createRoot(document.getElementById("root")!).render(
       options={{
         api_host: "/relay-AXDe/",
         ui_host: "https://us.posthog.com",
-        capture_pageview: false, // Prevent duplicate pageviews since we call trackGameView manually
-        // Removed 'defaults' property as it is not compatible with PostHogConfig type
       }}
     >
       <App />
