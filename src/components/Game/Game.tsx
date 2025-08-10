@@ -3,6 +3,7 @@ import GameCanvas from "./GameCanvas";
 import GameUI from "./GameUI";
 import GameHUD from "./GameHUD";
 import { MobileControls } from "./MobileControls";
+import { CreditsBar } from "@/components/CreditsBar";
 import { useGameLoop } from "@/hooks/useGameLoop";
 import { usePageVisibility } from "@/hooks/useVisibility";
 import { useInput } from "@/hooks/useInput";
@@ -34,11 +35,11 @@ import type { PlayerState } from "@/types/player";
 import type { Coin } from "@/types/collectibles";
 import { ObstacleManager } from "@/components/Obstacles/ObstacleManager";
 import { CoinManager } from "@/components/Collectibles/CoinManager";
-import { 
-  useGameAnalytics, 
-  GameAnalytics, 
-  isScoreMilestone, 
-  isSpeedMilestone 
+import {
+  useGameAnalytics,
+  GameAnalytics,
+  isScoreMilestone,
+  isSpeedMilestone,
 } from "@/lib/analytics";
 
 function createInitialPlayer(): PlayerState {
@@ -86,7 +87,9 @@ export function Game() {
   const lastScoreMilestoneRef = useRef<number>(0);
   const lastSpeedMilestoneRef = useRef<number>(0);
   const gameStartTimeRef = useRef<number>(0);
-  const collisionCauseRef = useRef<"obstacle_collision" | "manual_restart">("manual_restart");
+  const collisionCauseRef = useRef<"obstacle_collision" | "manual_restart">(
+    "manual_restart"
+  );
 
   const playerRef = useRef<PlayerState>(createInitialPlayer());
   const obstaclesRef = useRef<Obstacle[]>([]);
@@ -113,7 +116,7 @@ export function Game() {
     setTopSpeed(INITIAL_SPEED);
     setCoinsCollected(0);
     setGameOver(false);
-    
+
     // Reset analytics tracking
     lastScoreMilestoneRef.current = 0;
     lastSpeedMilestoneRef.current = 0;
@@ -125,12 +128,12 @@ export function Game() {
   const endGame = useCallback(() => {
     setRunning(false);
     setGameOver(true);
-    
+
     // Track game end analytics
     const sessionId = GameAnalytics.getSessionId();
     const timePlayedSeconds = GameAnalytics.getTimePlayedSeconds();
     const actionCounts = GameAnalytics.getActionCounts();
-    
+
     analytics.trackEvent("game_ended", {
       session_id: sessionId,
       final_score: score,
@@ -142,11 +145,11 @@ export function Game() {
       ducks_made: actionCounts.ducks,
       cause_of_death: collisionCauseRef.current,
     });
-    
+
     setHighScore((prev) => {
       const newHigh = Math.max(prev, score);
       setStoredHighScore(newHigh);
-      
+
       // Track high score achievement
       if (newHigh > prev) {
         analytics.trackEvent("high_score_achieved", {
@@ -156,7 +159,7 @@ export function Game() {
           improvement: newHigh - prev,
         });
       }
-      
+
       return newHigh;
     });
   }, [score, coinsCollected, topSpeed, analytics]);
@@ -169,10 +172,13 @@ export function Game() {
       // Increase speed and score
       // Compute new speed first to avoid stale value usage
       const newSpeed = speed + SPEED_INCREASE_PER_SECOND * dt;
-      
+
       setSpeed(() => {
         // Check for speed milestone
-        if (isSpeedMilestone(Math.floor(newSpeed)) && Math.floor(newSpeed) > lastSpeedMilestoneRef.current) {
+        if (
+          isSpeedMilestone(Math.floor(newSpeed)) &&
+          Math.floor(newSpeed) > lastSpeedMilestoneRef.current
+        ) {
           lastSpeedMilestoneRef.current = Math.floor(newSpeed);
           analytics.trackEvent("speed_milestone_reached", {
             session_id: GameAnalytics.getSessionId(),
@@ -181,15 +187,18 @@ export function Game() {
             time_to_reach_seconds: GameAnalytics.getTimePlayedSeconds(),
           });
         }
-        
+
         return newSpeed;
       });
-      
+
       setScore((sc) => {
         const newScore = sc + (newSpeed * dt) / 10; // Use newSpeed instead of stale speed
-        
+
         // Check for score milestone
-        if (isScoreMilestone(Math.floor(newScore)) && Math.floor(newScore) > lastScoreMilestoneRef.current) {
+        if (
+          isScoreMilestone(Math.floor(newScore)) &&
+          Math.floor(newScore) > lastScoreMilestoneRef.current
+        ) {
           lastScoreMilestoneRef.current = Math.floor(newScore);
           analytics.trackEvent("score_milestone_reached", {
             session_id: GameAnalytics.getSessionId(),
@@ -198,10 +207,10 @@ export function Game() {
             coins_collected: coinsCollected,
           });
         }
-        
+
         return newScore;
       });
-      
+
       setTopSpeed((ts) => (newSpeed > ts ? newSpeed : ts)); // Use newSpeed instead of stale speed
 
       const player = playerRef.current;
@@ -236,7 +245,9 @@ export function Game() {
       }
 
       // Execute buffered jump if allowed within coyote window
-      const canJump = (player.onGround || coyoteTimerRef.current > 0) && jumpBufferTimerRef.current > 0;
+      const canJump =
+        (player.onGround || coyoteTimerRef.current > 0) &&
+        jumpBufferTimerRef.current > 0;
       if (canJump) {
         player.velocityY = -JUMP_VELOCITY;
         player.onGround = false;
@@ -244,7 +255,7 @@ export function Game() {
         jumpBufferTimerRef.current = 0;
         coyoteTimerRef.current = 0;
         audio.playJump();
-        
+
         // Track jump analytics
         GameAnalytics.incrementJumps();
         analytics.trackEvent("player_jumped", {
@@ -259,7 +270,7 @@ export function Game() {
       // Ducking
       const wasDucking = player.isDucking;
       player.isDucking = input.duckHeld && player.onGround;
-      
+
       // Track duck start analytics
       if (player.isDucking && !wasDucking) {
         GameAnalytics.incrementDucks();
@@ -270,7 +281,7 @@ export function Game() {
           player_x: player.x,
         });
       }
-      
+
       if (player.isDucking) {
         // Adjust height while ducking
         const prevBottom = player.y + player.height;
@@ -286,7 +297,8 @@ export function Game() {
       if (!player.onGround) {
         // Gravity with fall speed clamp
         player.velocityY += GRAVITY * dt;
-        if (player.velocityY > MAX_FALL_SPEED) player.velocityY = MAX_FALL_SPEED;
+        if (player.velocityY > MAX_FALL_SPEED)
+          player.velocityY = MAX_FALL_SPEED;
 
         // Early release cuts upward velocity for variable jump height
         if (!jumpHeldRef.current && player.velocityY < 0) {
@@ -355,7 +367,7 @@ export function Game() {
             obstacle_x: o.x,
             obstacle_y: o.y,
           });
-          
+
           collisionCauseRef.current = "obstacle_collision";
           audio.playCrash();
           endGame();
@@ -377,7 +389,7 @@ export function Game() {
         );
         if (intersects) {
           audio.playCoin();
-          
+
           // Track coin collection analytics
           analytics.trackEvent("coin_collected", {
             session_id: GameAnalytics.getSessionId(),
@@ -387,7 +399,7 @@ export function Game() {
             coin_x: c.x,
             coin_y: c.y,
           });
-          
+
           // Score effect: coin value
           setScore((s) => s + 100);
           setCoinsCollected((n) => n + 1);
@@ -423,15 +435,15 @@ export function Game() {
       // This is a new game start
       gameStartTimeRef.current = Date.now();
       const sessionId = GameAnalytics.getSessionId();
-      
+
       // Associate session with PostHog for proper event tracking
       analytics.identifyPlayer(sessionId);
-      
+
       analytics.trackEvent("game_started", {
         session_id: sessionId,
         timestamp: gameStartTimeRef.current,
       });
-      
+
       analytics.trackGameView(sessionId);
     }
   }, [running, gameOver, analytics]);
@@ -471,10 +483,10 @@ export function Game() {
   // Responsive sizing - more aggressive scaling for mobile
   const { ref: containerRef, width: containerWidth } =
     useElementSize<HTMLDivElement>();
-  
+
   // Check if mobile
   const isMobile = containerWidth <= 768;
-  
+
   // More aggressive scaling for mobile to use more screen space
   let targetWidth;
   if (isMobile) {
@@ -483,16 +495,23 @@ export function Game() {
     const availableHeight = viewportHeight - 120; // Account for controls and UI
     const maxWidthFromHeight = (availableHeight / CANVAS_HEIGHT) * CANVAS_WIDTH;
     const maxWidthFromContainer = containerWidth - 16;
-    
-    targetWidth = Math.min(maxWidthFromHeight, maxWidthFromContainer, containerWidth * 0.98);
+
+    targetWidth = Math.min(
+      maxWidthFromHeight,
+      maxWidthFromContainer,
+      containerWidth * 0.98
+    );
   } else {
     targetWidth = Math.min(Math.max(320, containerWidth - 32), 1000);
   }
-  
+
   const scale = targetWidth / CANVAS_WIDTH;
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 md:p-6" data-theme={theme}>
+    <div
+      className="w-full min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 md:p-6"
+      data-theme={theme}
+    >
       <div ref={containerRef} className="w-full max-w-[1100px]">
         {/* Title - smaller on mobile */}
         <div className="mb-2 sm:mb-3 flex items-center gap-2">
@@ -503,9 +522,9 @@ export function Game() {
         </div>
         <div className="relative">
           {/* Canvas with tap-to-jump for mobile */}
-          <div 
-            className={`relative ${isMobile ? 'mobile-canvas-wrapper' : ''}`}
-            style={{ touchAction: 'manipulation' }}
+          <div
+            className={`relative ${isMobile ? "mobile-canvas-wrapper" : ""}`}
+            style={{ touchAction: "manipulation" }}
             onTouchStart={(e) => {
               // Simple tap-to-jump on canvas area
               e.preventDefault();
@@ -549,7 +568,9 @@ export function Game() {
           {!isMobile && (
             <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center">
               <div className="pointer-events-auto rounded-md border border-border bg-popover/70 px-2.5 py-1 text-[10px] text-muted-foreground backdrop-blur">
-                <span className="hidden sm:inline">W/Up: Jump · S/Down: Duck/Fall · A/Left & D/Right: Move · </span>
+                <span className="hidden sm:inline">
+                  W/Up: Jump · S/Down: Duck/Fall · A/Left & D/Right: Move ·{" "}
+                </span>
                 <span>Space: Start/Retry · P: Pause · Coins: +100</span>
               </div>
             </div>
@@ -571,7 +592,9 @@ export function Game() {
               <div className="pointer-events-auto rounded-md border border-border bg-popover/70 backdrop-blur px-3 py-2">
                 <div className="text-xs sm:text-sm text-muted-foreground">
                   <span className="block md:hidden">Crashed! Tap to retry</span>
-                  <span className="hidden md:block">Crashed! Press Space to retry</span>
+                  <span className="hidden md:block">
+                    Crashed! Press Space to retry
+                  </span>
                 </div>
               </div>
             </div>
@@ -607,6 +630,8 @@ export function Game() {
           setRunning(true);
         }}
       />
+      {/* Credits and GitHub Star button */}
+      <CreditsBar />
     </div>
   );
 }
