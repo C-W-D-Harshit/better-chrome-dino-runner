@@ -15,10 +15,13 @@ export function CreditsBar() {
   const authorUrl: string = "https://x.com/cwd_harshit";
 
   return (
-    <div className="mt-6 w-full max-w-[1100px] px-2 sm:px-0">
-      <div className="flex flex-col items-center justify-between gap-2 rounded-md border border-border bg-popover/60 p-2 text-xs text-muted-foreground backdrop-blur sm:flex-row">
-        {/* Author credit with a heart */}
-        <p className="m-0 select-none">
+    <div
+      className="fixed bottom-3 right-3 z-50 pointer-events-none md:bottom-4 md:right-4"
+      aria-live="polite"
+    >
+      <div className="pointer-events-auto flex items-center gap-3 rounded-md border border-border bg-popover/80 px-2.5 py-1 text-xs text-muted-foreground backdrop-blur">
+        {/* Author credit with a heart (hide on very small screens to avoid overlap) */}
+        <p className="m-0 hidden select-none sm:block">
           Made with <span aria-hidden>💖</span> by{" "}
           <a
             href={authorUrl}
@@ -37,7 +40,7 @@ export function CreditsBar() {
           size="sm"
           asChild
           aria-label="Star this project on GitHub"
-          className="transition-colors hover:text-yellow-400 hover:border-yellow-400 dark:hover:text-yellow-600 dark:hover:border-yellow-600"
+          className="transition-colors hover:text-yellow-400 hover:border-yellow-400 dark:hover:text-yellow-500 dark:hover:border-yellow-500"
         >
           <a
             href={repoUrl}
@@ -46,7 +49,8 @@ export function CreditsBar() {
             title="Star it on GitHub"
           >
             <Star className="size-3.5" aria-hidden />
-            Star It
+            <span className="sr-only">Star it on GitHub</span>
+            <span className="hidden sm:inline">Star It</span>
           </a>
         </Button>
       </div>
