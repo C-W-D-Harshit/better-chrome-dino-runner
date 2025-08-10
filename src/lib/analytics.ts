@@ -223,7 +223,7 @@ export class GameAnalytics {
    * Initialize analytics session
    */
   static initSession(): string {
-    this.sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    this.sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
     this.gameStartTime = Date.now();
     this.resetActionCounts();
     return this.sessionId;
