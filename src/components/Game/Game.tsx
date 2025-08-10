@@ -41,6 +41,8 @@ import {
   isScoreMilestone,
   isSpeedMilestone,
 } from "@/lib/analytics";
+import { ShootingStars } from "../ui/shooting-stars";
+import { StarsBackground } from "../ui/stars-background";
 
 function createInitialPlayer(): PlayerState {
   return {
@@ -512,6 +514,8 @@ export function Game() {
       className="w-full min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 md:p-6"
       data-theme={theme}
     >
+      <ShootingStars />
+      <StarsBackground />
       <div ref={containerRef} className="w-full max-w-[1100px]">
         {/* Title - smaller on mobile */}
         <div className="mb-2 sm:mb-3 flex items-center gap-2">

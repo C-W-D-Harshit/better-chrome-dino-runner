@@ -169,7 +169,7 @@
   body {
     @apply bg-background text-foreground antialiased;
   }
-  
+
   /* Fix canvas click/tap animations and interactions */
   canvas {
     -webkit-tap-highlight-color: transparent;
@@ -180,11 +180,11 @@
     user-select: none;
     touch-action: manipulation;
   }
-  
+
   canvas:active {
     box-shadow: none !important;
   }
-  
+
   /* Maintain keyboard accessibility with visible focus ring */
   canvas:focus-visible {
     outline: 2px solid hsl(var(--ring));
@@ -201,7 +201,7 @@
     height: 100%;
     width: 100%;
   }
-  
+
   body {
     overflow: hidden;
     position: fixed;
@@ -217,13 +217,14 @@
     /* Prevent zoom on double tap */
     touch-action: manipulation;
   }
-  
+
   /* Optimize touch targets */
-  button, [role="button"] {
+  button,
+  [role="button"] {
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
-  
+
   /* Ensure proper canvas scaling on mobile */
   canvas {
     touch-action: none;
@@ -232,7 +233,7 @@
     /* Allow canvas to be bigger on mobile */
     max-height: 70vh !important;
   }
-  
+
   /* Game container adjustments for mobile */
   .mobile-game-container {
     height: 100vh;
@@ -240,13 +241,13 @@
     position: relative;
     padding: 0.5rem !important;
   }
-  
+
   /* Make the game take up more vertical space on mobile */
   [data-theme] {
     padding-top: 0.5rem !important;
     padding-bottom: 0.5rem !important;
   }
-  
+
   /* Ensure game canvas wrapper uses available space */
   .mobile-canvas-wrapper {
     height: auto;
@@ -266,4 +267,22 @@
 .touch-manipulation:active {
   transform: scale(0.95);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+@theme inline {
+  --animate-meteor-effect: meteor 5s linear infinite;
+
+  @keyframes meteor {
+    0% {
+      transform: rotate(215deg) translateX(0);
+      opacity: 1;
+    }
+    70% {
+      opacity: 1;
+    }
+    100% {
+      transform: rotate(215deg) translateX(-500px);
+      opacity: 0;
+    }
+  }
 }
